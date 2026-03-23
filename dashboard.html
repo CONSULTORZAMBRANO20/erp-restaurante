@@ -15,7 +15,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .logo-name{font-size:15px;font-weight:500;color:#f1f0ec}
 .topbar-right{display:flex;align-items:center;gap:8px}
 .badge-mes{background:#1e3a2f;color:#4ade80;font-size:11px;font-weight:500;padding:3px 10px;border-radius:99px;border:1px solid #166534}
-.user-pill{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.05);padding:4px 10px;border-radius:99px;cursor:pointer}
+.user-pill{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.05);padding:4px 10px;border-radius:99px}
 .user-dot{width:22px;height:22px;border-radius:50%;background:#f97316;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff}
 .user-name{font-size:12px;color:#9ca3af}
 .nav-tabs{background:#1a1d27;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;padding:0 16px;gap:4px;overflow-x:auto}
@@ -60,8 +60,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .bar-val{font-size:12px;color:#9ca3af;width:80px;text-align:right;flex-shrink:0}
 .empty{text-align:center;padding:32px;color:#4b5563;font-size:13px}
 .logout-btn{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:6px 12px;font-size:12px;color:#f87171;cursor:pointer}
-.logout-btn:hover{background:rgba(239,68,68,0.15)}
 canvas{max-height:220px}
+
+/* ── SALDOS ── */
+.saldo-card{background:#0f1117;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:10px}
+.saldo-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.saldo-cuenta{display:flex;align-items:center;gap:10px}
+.saldo-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.saldo-nombre{font-size:14px;font-weight:500;color:#f1f0ec}
+.saldo-neto{font-size:20px;font-weight:600}
+.saldo-neto.positivo{color:#4ade80}
+.saldo-neto.neutro{color:#6b7280}
+.saldo-neto.negativo{color:#f87171}
+.saldo-detalle{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.saldo-det-item{background:#1a1d27;border-radius:8px;padding:10px 12px}
+.saldo-det-label{font-size:11px;color:#6b7280;margin-bottom:4px}
+.saldo-det-val{font-size:14px;font-weight:500}
+.saldo-det-val.entrada{color:#4ade80}
+.saldo-det-val.salida{color:#f87171}
+.saldo-filtros{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.sf-btn{background:#0f1117;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:7px 14px;font-size:12px;color:#6b7280;cursor:pointer;transition:all .15s}
+.sf-btn.active{background:rgba(249,115,22,0.12);border-color:rgba(249,115,22,0.3);color:#fb923c;font-weight:500}
+.saldo-total{background:#1a1d27;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px;margin-bottom:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.st-item{text-align:center}
+.st-label{font-size:11px;color:#6b7280;margin-bottom:6px}
+.st-val{font-size:18px;font-weight:600}
 </style>
 </head>
 <body>
@@ -85,19 +108,18 @@ canvas{max-height:220px}
   <a class="nav-tab active" onclick="showTab('hoy',this)">Hoy</a>
   <a class="nav-tab" onclick="showTab('mes',this)">Este mes</a>
   <a class="nav-tab" onclick="showTab('anio',this)">Este año</a>
+  <a class="nav-tab" onclick="showTab('saldos',this)">Saldos</a>
   <a class="nav-tab" onclick="showTab('historial',this)">Historial</a>
 </div>
 
 <div class="container">
-
-  <!-- Accesos rápidos -->
   <div class="nav-btns">
     <a href="ventas.html" class="nav-btn orange">+ Nueva venta</a>
     <a href="egresos.html" class="nav-btn red">− Nuevo egreso</a>
     <a href="admin.html" class="nav-btn" style="margin-left:auto">⚙ Admin</a>
   </div>
 
-  <!-- TAB: HOY -->
+  <!-- TAB HOY -->
   <div class="section active" id="tab-hoy">
     <div class="metrics" id="metricsHoy"></div>
     <div class="card">
@@ -110,7 +132,7 @@ canvas{max-height:220px}
     </div>
   </div>
 
-  <!-- TAB: MES -->
+  <!-- TAB MES -->
   <div class="section" id="tab-mes">
     <div class="metrics" id="metricsMes"></div>
     <div class="card">
@@ -123,7 +145,7 @@ canvas{max-height:220px}
     </div>
   </div>
 
-  <!-- TAB: AÑO -->
+  <!-- TAB AÑO -->
   <div class="section" id="tab-anio">
     <div class="metrics" id="metricsAnio"></div>
     <div class="card">
@@ -132,7 +154,18 @@ canvas{max-height:220px}
     </div>
   </div>
 
-  <!-- TAB: HISTORIAL -->
+  <!-- TAB SALDOS -->
+  <div class="section" id="tab-saldos">
+    <div class="saldo-filtros">
+      <button class="sf-btn active" onclick="filtrarSaldos('hoy',this)">Hoy</button>
+      <button class="sf-btn" onclick="filtrarSaldos('mes',this)">Este mes</button>
+      <button class="sf-btn" onclick="filtrarSaldos('anio',this)">Este año</button>
+    </div>
+    <div class="saldo-total" id="saldoTotales"></div>
+    <div id="saldosCuentas"></div>
+  </div>
+
+  <!-- TAB HISTORIAL -->
   <div class="section" id="tab-historial">
     <div class="filtros">
       <button class="filtro-btn active" onclick="filtrarHistorial('ventas',this)">Ventas</button>
@@ -162,8 +195,13 @@ canvas{max-height:220px}
   let chartMes = null;
   let chartAnio = null;
   let historialTipo = 'ventas';
+  let saldosPeriodo = 'hoy';
 
   const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const COLORES_METODO = {
+    'Efectivo':'#4ade80','Nequi':'#a78bfa','Daviplata':'#60a5fa',
+    'Transferencia':'#fbbf24','Tarjeta débito':'#f97316','Tarjeta crédito':'#f87171'
+  };
 
   window.addEventListener('load', async () => {
     const raw = sessionStorage.getItem('erp_user');
@@ -171,18 +209,14 @@ canvas{max-height:220px}
     session = JSON.parse(raw);
     document.getElementById('userName').textContent    = session.nombre;
     document.getElementById('userInitial').textContent = session.nombre.charAt(0).toUpperCase();
-
-    const hoy  = new Date();
+    const hoy = new Date();
     document.getElementById('badgeMes').textContent = MESES[hoy.getMonth()] + ' ' + hoy.getFullYear();
-
-    const hoyStr   = hoy.toISOString().split('T')[0];
+    const hoyStr = hoy.toISOString().split('T')[0];
     document.getElementById('filtroDesde').value = hoyStr.slice(0,7) + '-01';
     document.getElementById('filtroHasta').value = hoyStr;
-
     await cargarHoy();
   });
 
-  // ── TABS ──
   function showTab(tab, el) {
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -190,62 +224,55 @@ canvas{max-height:220px}
     el.classList.add('active');
     if (tab === 'mes')      cargarMes();
     if (tab === 'anio')     cargarAnio();
+    if (tab === 'saldos')   cargarSaldos('hoy');
     if (tab === 'historial') cargarHistorial();
   }
 
   // ── HOY ──
   async function cargarHoy() {
     const hoy = new Date().toISOString().split('T')[0];
-
     const [{ data: ventas }, { data: egresos }] = await Promise.all([
-      sb.from('ventas').select('valor, metodo_pago_id, descripcion, hora, metodos_pago(nombre)').eq('fecha', hoy).order('created_at', { ascending: false }),
-      sb.from('egresos').select('valor, descripcion, hora, categorias_egreso(nombre,color)').eq('fecha', hoy).order('created_at', { ascending: false })
+      sb.from('ventas').select('valor,metodo_pago_id,descripcion,hora,metodos_pago(nombre)').eq('fecha',hoy).order('created_at',{ascending:false}),
+      sb.from('egresos').select('valor,descripcion,hora,categorias_egreso(nombre,color)').eq('fecha',hoy).order('created_at',{ascending:false})
     ]);
-
-    const totalV = (ventas||[]).reduce((s,v) => s + parseFloat(v.valor), 0);
-    const totalE = (egresos||[]).reduce((s,e) => s + parseFloat(e.valor), 0);
+    const totalV   = (ventas||[]).reduce((s,v) => s+parseFloat(v.valor),0);
+    const totalE   = (egresos||[]).reduce((s,e) => s+parseFloat(e.valor),0);
     const utilidad = totalV - totalE;
-    const margen   = totalV > 0 ? ((utilidad / totalV) * 100).toFixed(1) : 0;
+    const margen   = totalV > 0 ? ((utilidad/totalV)*100).toFixed(1) : 0;
 
-    document.getElementById('metricsHoy').innerHTML = `
-      ${metricCard('Ventas hoy', '$' + totalV.toLocaleString('es-CO'), ventas?.length + ' transacciones', 'gray')}
-      ${metricCard('Egresos hoy', '$' + totalE.toLocaleString('es-CO'), '', 'red')}
-      ${metricCard('Utilidad neta', '$' + utilidad.toLocaleString('es-CO'), 'Margen ' + margen + '%', utilidad >= 0 ? 'green' : 'red')}
-      ${metricCard('Transacciones', ventas?.length || 0, 'ventas registradas', 'gray')}
-    `;
+    document.getElementById('metricsHoy').innerHTML =
+      metricCard('Ventas hoy','$'+totalV.toLocaleString('es-CO'),(ventas?.length||0)+' transacciones','gray') +
+      metricCard('Egresos hoy','$'+totalE.toLocaleString('es-CO'),'','red') +
+      metricCard('Utilidad neta','$'+utilidad.toLocaleString('es-CO'),'Margen '+margen+'%',utilidad>=0?'green':'red') +
+      metricCard('Transacciones',ventas?.length||0,'ventas hoy','gray');
 
-    // Barras por método de pago
     const metodos = {};
     (ventas||[]).forEach(v => {
-      const n = v.metodos_pago?.nombre || 'Otro';
-      metodos[n] = (metodos[n] || 0) + parseFloat(v.valor);
+      const n = v.metodos_pago?.nombre||'Otro';
+      metodos[n] = (metodos[n]||0) + parseFloat(v.valor);
     });
-    const maxM = Math.max(...Object.values(metodos), 1);
+    const maxM = Math.max(...Object.values(metodos),1);
     document.getElementById('barrasMetodos').innerHTML = Object.keys(metodos).length === 0
       ? '<div class="empty">Sin ventas hoy</div>'
-      : Object.entries(metodos).sort((a,b) => b[1]-a[1]).map(([n,v]) => `
+      : Object.entries(metodos).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`
         <div class="bar-row">
           <div class="bar-label">${n}</div>
-          <div class="bar-track"><div class="bar-fill" style="width:${(v/maxM*100).toFixed(1)}%;background:#f97316"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(v/maxM*100).toFixed(1)}%;background:${COLORES_METODO[n]||'#f97316'}"></div></div>
           <div class="bar-val">$${v.toLocaleString('es-CO')}</div>
         </div>`).join('');
 
-    // Últimas transacciones mezcladas
     const todas = [
-      ...(ventas||[]).slice(0,8).map(v => ({ tipo:'venta', desc:v.descripcion, meta:v.hora?.slice(0,5) + ' · ' + (v.metodos_pago?.nombre||''), val:parseFloat(v.valor) })),
-      ...(egresos||[]).slice(0,4).map(e => ({ tipo:'egreso', desc:e.descripcion, meta:e.hora?.slice(0,5) + ' · ' + (e.categorias_egreso?.nombre||''), val:parseFloat(e.valor), color:e.categorias_egreso?.color }))
-    ].slice(0, 12);
+      ...(ventas||[]).slice(0,8).map(v=>({tipo:'venta',desc:v.descripcion,meta:v.hora?.slice(0,5)+' · '+(v.metodos_pago?.nombre||''),val:parseFloat(v.valor)})),
+      ...(egresos||[]).slice(0,4).map(e=>({tipo:'egreso',desc:e.descripcion,meta:e.hora?.slice(0,5)+' · '+(e.categorias_egreso?.nombre||''),val:parseFloat(e.valor),color:e.categorias_egreso?.color}))
+    ].slice(0,12);
 
     document.getElementById('txHoy').innerHTML = todas.length === 0
       ? '<div class="empty">Sin movimientos hoy</div>'
-      : todas.map(t => `
+      : todas.map(t=>`
         <div class="tx-item">
           <div class="tx-left">
             <div class="tx-dot" style="background:${t.tipo==='venta'?'#4ade80':(t.color||'#f87171')}"></div>
-            <div>
-              <div class="tx-desc">${t.desc}</div>
-              <div class="tx-meta">${t.meta}</div>
-            </div>
+            <div><div class="tx-desc">${t.desc}</div><div class="tx-meta">${t.meta}</div></div>
           </div>
           <div class="tx-val" style="color:${t.tipo==='venta'?'#4ade80':'#f87171'}">${t.tipo==='venta'?'+':'-'}$${t.val.toLocaleString('es-CO')}</div>
         </div>`).join('');
@@ -255,56 +282,44 @@ canvas{max-height:220px}
   async function cargarMes() {
     const hoy  = new Date();
     const anio = hoy.getFullYear();
-    const mes  = String(hoy.getMonth() + 1).padStart(2, '0');
+    const mes  = String(hoy.getMonth()+1).padStart(2,'0');
     const desde = `${anio}-${mes}-01`;
     const hasta = hoy.toISOString().split('T')[0];
 
-    const [{ data: ventas }, { data: egresos }] = await Promise.all([
-      sb.from('ventas').select('valor, fecha').gte('fecha', desde).lte('fecha', hasta),
-      sb.from('egresos').select('valor, fecha, categoria_id, categorias_egreso(nombre,color)').gte('fecha', desde).lte('fecha', hasta)
+    const [{ data: ventas },{ data: egresos }] = await Promise.all([
+      sb.from('ventas').select('valor,fecha').gte('fecha',desde).lte('fecha',hasta),
+      sb.from('egresos').select('valor,fecha,categorias_egreso(nombre,color)').gte('fecha',desde).lte('fecha',hasta)
     ]);
-
-    const totalV   = (ventas||[]).reduce((s,v) => s + parseFloat(v.valor), 0);
-    const totalE   = (egresos||[]).reduce((s,e) => s + parseFloat(e.valor), 0);
+    const totalV   = (ventas||[]).reduce((s,v)=>s+parseFloat(v.valor),0);
+    const totalE   = (egresos||[]).reduce((s,e)=>s+parseFloat(e.valor),0);
     const utilidad = totalV - totalE;
     const margen   = totalV > 0 ? ((utilidad/totalV)*100).toFixed(1) : 0;
 
-    document.getElementById('metricsMes').innerHTML = `
-      ${metricCard('Ventas del mes', '$' + totalV.toLocaleString('es-CO'), ventas?.length + ' transacciones', 'gray')}
-      ${metricCard('Egresos del mes', '$' + totalE.toLocaleString('es-CO'), '', 'red')}
-      ${metricCard('Utilidad del mes', '$' + utilidad.toLocaleString('es-CO'), 'Margen ' + margen + '%', utilidad >= 0 ? 'green' : 'red')}
-      ${metricCard('Días activos', [...new Set((ventas||[]).map(v=>v.fecha))].length, 'con ventas', 'gray')}
-    `;
+    document.getElementById('metricsMes').innerHTML =
+      metricCard('Ventas del mes','$'+totalV.toLocaleString('es-CO'),(ventas?.length||0)+' transacciones','gray') +
+      metricCard('Egresos del mes','$'+totalE.toLocaleString('es-CO'),'','red') +
+      metricCard('Utilidad del mes','$'+utilidad.toLocaleString('es-CO'),'Margen '+margen+'%',utilidad>=0?'green':'red') +
+      metricCard('Días activos',[...new Set((ventas||[]).map(v=>v.fecha))].length,'con ventas','gray');
 
-    // Gráfica de ventas diarias
     const porDia = {};
-    (ventas||[]).forEach(v => { porDia[v.fecha] = (porDia[v.fecha]||0) + parseFloat(v.valor); });
-    const labels = Object.keys(porDia).sort().map(d => d.slice(8));
-    const vals   = labels.map(d => {
-      const key = `${anio}-${mes}-${d}`;
-      return porDia[key] || 0;
-    });
-
+    (ventas||[]).forEach(v=>{ porDia[v.fecha]=(porDia[v.fecha]||0)+parseFloat(v.valor); });
+    const labels = Object.keys(porDia).sort().map(d=>d.slice(8));
+    const vals   = Object.keys(porDia).sort().map(k=>porDia[k]);
     if (chartMes) chartMes.destroy();
     const ctx = document.getElementById('chartMes').getContext('2d');
-    chartMes = new Chart(ctx, {
-      type: 'bar',
-      data: { labels, datasets: [{ data: vals, backgroundColor: 'rgba(249,115,22,0.7)', borderRadius: 4, borderSkipped: false }] },
-      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#6b7280', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#6b7280', font: { size: 11 }, callback: v => '$' + v.toLocaleString('es-CO') }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
-    });
+    chartMes = new Chart(ctx,{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:'rgba(249,115,22,0.7)',borderRadius:4,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6b7280',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#6b7280',font:{size:11},callback:v=>'$'+v.toLocaleString('es-CO')},grid:{color:'rgba(255,255,255,0.04)'}}}}});
 
-    // Barras por categoría
     const cats = {};
-    (egresos||[]).forEach(e => {
-      const n = e.categorias_egreso?.nombre || 'Otro';
-      const c = e.categorias_egreso?.color  || '#6b7280';
-      if (!cats[n]) cats[n] = { val: 0, color: c };
-      cats[n].val += parseFloat(e.valor);
+    (egresos||[]).forEach(e=>{
+      const n=e.categorias_egreso?.nombre||'Otro';
+      const c=e.categorias_egreso?.color||'#6b7280';
+      if(!cats[n]) cats[n]={val:0,color:c};
+      cats[n].val+=parseFloat(e.valor);
     });
-    const maxC = Math.max(...Object.values(cats).map(c=>c.val), 1);
-    document.getElementById('barrasCatMes').innerHTML = Object.keys(cats).length === 0
+    const maxC = Math.max(...Object.values(cats).map(c=>c.val),1);
+    document.getElementById('barrasCatMes').innerHTML = Object.keys(cats).length===0
       ? '<div class="empty">Sin egresos este mes</div>'
-      : Object.entries(cats).sort((a,b) => b[1].val - a[1].val).map(([n,c]) => `
+      : Object.entries(cats).sort((a,b)=>b[1].val-a[1].val).map(([n,c])=>`
         <div class="bar-row">
           <div class="bar-label">${n}</div>
           <div class="bar-track"><div class="bar-fill" style="width:${(c.val/maxC*100).toFixed(1)}%;background:${c.color}"></div></div>
@@ -315,41 +330,115 @@ canvas{max-height:220px}
   // ── AÑO ──
   async function cargarAnio() {
     const anio  = new Date().getFullYear();
-    const desde = `${anio}-01-01`;
-    const hasta = `${anio}-12-31`;
-
-    const [{ data: ventas }, { data: egresos }] = await Promise.all([
-      sb.from('ventas').select('valor, fecha').gte('fecha', desde).lte('fecha', hasta),
-      sb.from('egresos').select('valor, fecha').gte('fecha', desde).lte('fecha', hasta)
+    const [{ data: ventas },{ data: egresos }] = await Promise.all([
+      sb.from('ventas').select('valor,fecha').gte('fecha',`${anio}-01-01`).lte('fecha',`${anio}-12-31`),
+      sb.from('egresos').select('valor,fecha').gte('fecha',`${anio}-01-01`).lte('fecha',`${anio}-12-31`)
     ]);
-
-    const totalV   = (ventas||[]).reduce((s,v) => s + parseFloat(v.valor), 0);
-    const totalE   = (egresos||[]).reduce((s,e) => s + parseFloat(e.valor), 0);
+    const totalV   = (ventas||[]).reduce((s,v)=>s+parseFloat(v.valor),0);
+    const totalE   = (egresos||[]).reduce((s,e)=>s+parseFloat(e.valor),0);
     const utilidad = totalV - totalE;
     const margen   = totalV > 0 ? ((utilidad/totalV)*100).toFixed(1) : 0;
 
-    document.getElementById('metricsAnio').innerHTML = `
-      ${metricCard('Ventas del año', '$' + totalV.toLocaleString('es-CO'), '', 'gray')}
-      ${metricCard('Egresos del año', '$' + totalE.toLocaleString('es-CO'), '', 'red')}
-      ${metricCard('Utilidad del año', '$' + utilidad.toLocaleString('es-CO'), 'Margen ' + margen + '%', utilidad >= 0 ? 'green' : 'red')}
-      ${metricCard('Meses activos', [...new Set((ventas||[]).map(v=>v.fecha.slice(0,7)))].length, 'con ventas', 'gray')}
-    `;
+    document.getElementById('metricsAnio').innerHTML =
+      metricCard('Ventas del año','$'+totalV.toLocaleString('es-CO'),'','gray') +
+      metricCard('Egresos del año','$'+totalE.toLocaleString('es-CO'),'','red') +
+      metricCard('Utilidad del año','$'+utilidad.toLocaleString('es-CO'),'Margen '+margen+'%',utilidad>=0?'green':'red') +
+      metricCard('Meses activos',[...new Set((ventas||[]).map(v=>v.fecha.slice(0,7)))].length,'con ventas','gray');
 
     const porMes = {};
-    (ventas||[]).forEach(v => {
-      const m = parseInt(v.fecha.slice(5,7)) - 1;
-      porMes[m] = (porMes[m]||0) + parseFloat(v.valor);
-    });
-    const labelsA = MESES;
-    const valsA   = labelsA.map((_,i) => porMes[i] || 0);
-
+    (ventas||[]).forEach(v=>{ const m=parseInt(v.fecha.slice(5,7))-1; porMes[m]=(porMes[m]||0)+parseFloat(v.valor); });
     if (chartAnio) chartAnio.destroy();
     const ctx = document.getElementById('chartAnio').getContext('2d');
-    chartAnio = new Chart(ctx, {
-      type: 'bar',
-      data: { labels: labelsA, datasets: [{ data: valsA, backgroundColor: 'rgba(249,115,22,0.7)', borderRadius: 4, borderSkipped: false }] },
-      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#6b7280', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#6b7280', font: { size: 11 }, callback: v => '$' + v.toLocaleString('es-CO') }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
-    });
+    chartAnio = new Chart(ctx,{type:'bar',data:{labels:MESES,datasets:[{data:MESES.map((_,i)=>porMes[i]||0),backgroundColor:'rgba(249,115,22,0.7)',borderRadius:4,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6b7280',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#6b7280',font:{size:11},callback:v=>'$'+v.toLocaleString('es-CO')},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+  }
+
+  // ── SALDOS POR CUENTA ──
+  function filtrarSaldos(periodo, el) {
+    saldosPeriodo = periodo;
+    document.querySelectorAll('.sf-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    cargarSaldos(periodo);
+  }
+
+  async function cargarSaldos(periodo) {
+    const hoy   = new Date();
+    const hoyStr = hoy.toISOString().split('T')[0];
+    let desde, hasta;
+
+    if (periodo === 'hoy') {
+      desde = hoyStr; hasta = hoyStr;
+    } else if (periodo === 'mes') {
+      const mes = String(hoy.getMonth()+1).padStart(2,'0');
+      desde = `${hoy.getFullYear()}-${mes}-01`; hasta = hoyStr;
+    } else {
+      desde = `${hoy.getFullYear()}-01-01`; hasta = `${hoy.getFullYear()}-12-31`;
+    }
+
+    const [{ data: ventas },{ data: egresos },{ data: metodos }] = await Promise.all([
+      sb.from('ventas').select('valor,metodo_pago_id,metodos_pago(nombre)').gte('fecha',desde).lte('fecha',hasta),
+      sb.from('egresos').select('valor,metodo_pago_id,metodos_pago(nombre)').gte('fecha',desde).lte('fecha',hasta).not('metodo_pago_id','is',null),
+      sb.from('metodos_pago').select('*').eq('activo',true).order('id')
+    ]);
+
+    const entradas = {};
+    const salidas  = {};
+    (metodos||[]).forEach(m => { entradas[m.nombre] = 0; salidas[m.nombre] = 0; });
+    (ventas||[]).forEach(v  => { const n=v.metodos_pago?.nombre||'Otro'; entradas[n]=(entradas[n]||0)+parseFloat(v.valor); });
+    (egresos||[]).forEach(e => { const n=e.metodos_pago?.nombre||'Otro'; salidas[n]=(salidas[n]||0)+parseFloat(e.valor); });
+
+    const totalEntradas = Object.values(entradas).reduce((s,v)=>s+v,0);
+    const totalSalidas  = Object.values(salidas).reduce((s,v)=>s+v,0);
+    const totalNeto     = totalEntradas - totalSalidas;
+
+    document.getElementById('saldoTotales').innerHTML = `
+      <div class="st-item">
+        <div class="st-label">Total entradas</div>
+        <div class="st-val" style="color:#4ade80">$${totalEntradas.toLocaleString('es-CO')}</div>
+      </div>
+      <div class="st-item">
+        <div class="st-label">Total salidas</div>
+        <div class="st-val" style="color:#f87171">$${totalSalidas.toLocaleString('es-CO')}</div>
+      </div>
+      <div class="st-item">
+        <div class="st-label">Saldo neto</div>
+        <div class="st-val" style="color:${totalNeto>=0?'#4ade80':'#f87171'}">$${totalNeto.toLocaleString('es-CO')}</div>
+      </div>`;
+
+    const cuentas = document.getElementById('saldosCuentas');
+    const activos = Object.keys(entradas).filter(n => entradas[n] > 0 || salidas[n] > 0);
+
+    if (activos.length === 0) {
+      cuentas.innerHTML = '<div class="empty">Sin movimientos en este período</div>';
+      return;
+    }
+
+    cuentas.innerHTML = activos.map(nombre => {
+      const entrada = entradas[nombre] || 0;
+      const salida  = salidas[nombre]  || 0;
+      const neto    = entrada - salida;
+      const color   = COLORES_METODO[nombre] || '#9ca3af';
+      const claseNeto = neto > 0 ? 'positivo' : neto < 0 ? 'negativo' : 'neutro';
+      return `
+        <div class="saldo-card">
+          <div class="saldo-header">
+            <div class="saldo-cuenta">
+              <div class="saldo-dot" style="background:${color}"></div>
+              <div class="saldo-nombre">${nombre}</div>
+            </div>
+            <div class="saldo-neto ${claseNeto}">$${neto.toLocaleString('es-CO')}</div>
+          </div>
+          <div class="saldo-detalle">
+            <div class="saldo-det-item">
+              <div class="saldo-det-label">Entradas (ventas)</div>
+              <div class="saldo-det-val entrada">+$${entrada.toLocaleString('es-CO')}</div>
+            </div>
+            <div class="saldo-det-item">
+              <div class="saldo-det-label">Salidas (egresos)</div>
+              <div class="saldo-det-val salida">-$${salida.toLocaleString('es-CO')}</div>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
   }
 
   // ── HISTORIAL ──
@@ -366,49 +455,40 @@ canvas{max-height:220px}
     const hasta = document.getElementById('filtroHasta').value;
     if (!desde || !hasta) return;
 
-    let data, error;
+    let data;
     if (historialTipo === 'ventas') {
-      ({ data, error } = await sb.from('ventas').select('*, metodos_pago(nombre)').gte('fecha', desde).lte('fecha', hasta).order('fecha', { ascending: false }).order('hora', { ascending: false }));
+      ({ data } = await sb.from('ventas').select('*,metodos_pago(nombre)').gte('fecha',desde).lte('fecha',hasta).order('fecha',{ascending:false}).order('hora',{ascending:false}));
     } else {
-      ({ data, error } = await sb.from('egresos').select('*, categorias_egreso(nombre,color)').gte('fecha', desde).lte('fecha', hasta).order('fecha', { ascending: false }).order('hora', { ascending: false }));
+      ({ data } = await sb.from('egresos').select('*,categorias_egreso(nombre,color),metodos_pago(nombre)').gte('fecha',desde).lte('fecha',hasta).order('fecha',{ascending:false}).order('hora',{ascending:false}));
     }
 
-    const total = (data||[]).reduce((s,r) => s + parseFloat(r.valor), 0);
-    document.getElementById('historialTotal').textContent = '$' + total.toLocaleString('es-CO');
+    const total = (data||[]).reduce((s,r)=>s+parseFloat(r.valor),0);
+    document.getElementById('historialTotal').textContent = '$'+total.toLocaleString('es-CO');
 
     const lista = document.getElementById('historialLista');
-    if (!data || data.length === 0) { lista.innerHTML = '<div class="empty">Sin registros en este período</div>'; return; }
+    if (!data || data.length === 0) { lista.innerHTML='<div class="empty">Sin registros en este período</div>'; return; }
 
     lista.innerHTML = data.map(r => {
       const esVenta = historialTipo === 'ventas';
-      const meta    = esVenta
-        ? `${r.fecha} · ${r.hora?.slice(0,5)} · ${r.metodos_pago?.nombre||''}`
-        : `${r.fecha} · ${r.hora?.slice(0,5)} · ${r.categorias_egreso?.nombre||''} ${r.proveedor?'· '+r.proveedor:''}`;
-      const color   = esVenta ? '#4ade80' : (r.categorias_egreso?.color||'#f87171');
+      const meta = esVenta
+        ? `${r.fecha} · ${r.hora?.slice(0,5)||''} · ${r.metodos_pago?.nombre||''}`
+        : `${r.fecha} · ${r.hora?.slice(0,5)||''} · ${r.categorias_egreso?.nombre||''} · ${r.metodos_pago?.nombre||'Sin cuenta'}${r.proveedor?' · '+r.proveedor:''}`;
+      const color    = esVenta ? '#4ade80' : (r.categorias_egreso?.color||'#f87171');
       const valColor = esVenta ? '#4ade80' : '#f87171';
-      const signo   = esVenta ? '+' : '-';
       return `
         <div class="tx-item">
           <div class="tx-left">
             <div class="tx-dot" style="background:${color}"></div>
-            <div>
-              <div class="tx-desc">${r.descripcion}</div>
-              <div class="tx-meta">${meta}</div>
-            </div>
+            <div><div class="tx-desc">${r.descripcion}</div><div class="tx-meta">${meta}</div></div>
           </div>
-          <div class="tx-val" style="color:${valColor}">${signo}$${parseFloat(r.valor).toLocaleString('es-CO')}</div>
+          <div class="tx-val" style="color:${valColor}">${esVenta?'+':'-'}$${parseFloat(r.valor).toLocaleString('es-CO')}</div>
         </div>`;
     }).join('');
   }
 
-  // ── HELPERS ──
   function metricCard(label, val, sub, tipo) {
-    const subColor = tipo === 'green' ? '#4ade80' : tipo === 'red' ? '#f87171' : '#4b5563';
-    return `<div class="metric">
-      <div class="metric-label">${label}</div>
-      <div class="metric-val">${val}</div>
-      ${sub ? `<div class="metric-sub" style="color:${subColor}">${sub}</div>` : ''}
-    </div>`;
+    const subColor = tipo==='green'?'#4ade80':tipo==='red'?'#f87171':'#4b5563';
+    return `<div class="metric"><div class="metric-label">${label}</div><div class="metric-val">${val}</div>${sub?`<div class="metric-sub" style="color:${subColor}">${sub}</div>`:''}</div>`;
   }
 
   function logout() {
