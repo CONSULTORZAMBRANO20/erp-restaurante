@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Arepa ERP · Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1117;color:#f1f0ec;min-height:100vh}
+.topbar{background:#1a1d27;border-bottom:1px solid rgba(255,255,255,0.06);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:32px;height:32px;background:#f97316;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.logo-name{font-size:15px;font-weight:500;color:#f1f0ec}
+.back-btn{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:6px 12px;font-size:13px;color:#9ca3af;cursor:pointer;text-decoration:none}
+.container{max-width:700px;margin:0 auto;padding:24px 16px}
+.section-title{font-size:11px;font-weight:500;color:#4b5563;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;margin-top:28px}
+.section-title:first-child{margin-top:0}
+.card{background:#1a1d27;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px;margin-bottom:12px}
+.card-title{font-size:13px;font-weight:500;color:#9ca3af;margin-bottom:16px;text-transform:uppercase;letter-spacing:.05em}
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:12px;color:#9ca3af;margin-bottom:6px;font-weight:500}
+.field input,.field select{width:100%;background:#0f1117;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:11px 14px;font-size:14px;color:#f1f0ec;outline:none;font-family:inherit;transition:border .2s}
+.field input:focus,.field select:focus{border-color:rgba(249,115,22,0.4)}
+.field input::placeholder{color:#374151}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{border:none;border-radius:8px;padding:11px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;width:100%;margin-top:4px}
+.btn-orange{background:#f97316;color:#fff}
+.btn-orange:hover{background:#ea6c0a}
+.btn-orange:disabled{background:#1f2937;color:#4b5563;cursor:not-allowed}
+.btn-red{background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25)}
+.btn-red:hover{background:rgba(239,68,68,0.2)}
+.btn-gray{background:rgba(255,255,255,0.05);color:#9ca3af;border:1px solid rgba(255,255,255,0.08)}
+.btn-gray:hover{background:rgba(255,255,255,0.08)}
+.lic-item{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.lic-item:last-child{border-bottom:none}
+.lic-left{display:flex;align-items:center;gap:12px}
+.lic-badge{padding:3px 10px;border-radius:99px;font-size:11px;font-weight:500}
+.lic-activa{background:#1e3a2f;color:#4ade80;border:1px solid #166534}
+.lic-inactiva{background:#1c1917;color:#6b7280;border:1px solid #292524}
+.lic-mes{font-size:14px;font-weight:500;color:#f1f0ec}
+.lic-codigo{font-size:12px;color:#6b7280;margin-top:2px;font-family:monospace}
+.lic-btns{display:flex;gap:6px}
+.lic-btn{padding:5px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;border:none;transition:all .2s}
+.user-item{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.user-item:last-child{border-bottom:none}
+.user-left{display:flex;align-items:center;gap:10px}
+.user-avatar{width:34px;height:34px;border-radius:50%;background:#f97316;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;flex-shrink:0}
+.user-nombre{font-size:13px;font-weight:500;color:#f1f0ec}
+.user-meta{font-size:11px;color:#4b5563;margin-top:2px}
+.rol-badge{padding:2px 8px;border-radius:99px;font-size:10px;font-weight:500}
+.rol-admin{background:rgba(249,115,22,0.15);color:#fb923c;border:1px solid rgba(249,115,22,0.2)}
+.rol-cajero{background:rgba(96,165,250,0.1);color:#60a5fa;border:1px solid rgba(96,165,250,0.15)}
+.rol-supervisor{background:rgba(167,139,250,0.1);color:#a78bfa;border:1px solid rgba(167,139,250,0.15)}
+.codigo-box{background:#0f1117;border:1px solid rgba(249,115,22,0.3);border-radius:8px;padding:14px 16px;font-family:monospace;font-size:16px;color:#fb923c;letter-spacing:.08em;text-align:center;margin:12px 0;display:none}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1d27;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:10px;font-size:14px;color:#f1f0ec;transition:transform .3s ease;z-index:999;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success .ti{color:#4ade80}
+.toast.error .ti{color:#f87171}
+.empty{text-align:center;padding:24px;color:#4b5563;font-size:13px}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">🫓</div>
+    <span class="logo-name">Arepa ERP · Admin</span>
+  </div>
+  <a href="dashboard.html" class="back-btn">← Dashboard</a>
+</div>
+
+<div class="container">
+
+  <!-- LICENCIAS -->
+  <div class="section-title">Gestión de licencias</div>
+  <div class="card">
+    <div class="card-title">Generar licencia mensual</div>
+    <div class="row">
+      <div class="field">
+        <label>Mes</label>
+        <select id="licMes">
+          <option value="1">Enero</option><option value="2">Febrero</option>
+          <option value="3">Marzo</option><option value="4">Abril</option>
+          <option value="5">Mayo</option><option value="6">Junio</option>
+          <option value="7">Julio</option><option value="8">Agosto</option>
+          <option value="9">Septiembre</option><option value="10">Octubre</option>
+          <option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Año</label>
+        <input type="number" id="licAnio" value="2026" min="2024" max="2099"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Código personalizado <span style="color:#4b5563;font-weight:400">(o déjalo vacío para generar automático)</span></label>
+      <input type="text" id="licCodigo" placeholder="Ej: AREPA-ABR-2026"/>
+    </div>
+    <div class="codigo-box" id="codigoGenerado"></div>
+    <button class="btn btn-orange" id="btnGenerar" onclick="generarLicencia()">Generar licencia</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Licencias registradas</div>
+    <div id="listaLicencias"><div class="empty">Cargando...</div></div>
+  </div>
+
+  <!-- USUARIOS -->
+  <div class="section-title">Gestión de usuarios</div>
+  <div class="card">
+    <div class="card-title">Nuevo usuario</div>
+    <div class="row">
+      <div class="field">
+        <label>Nombre completo</label>
+        <input type="text" id="uNombre" placeholder="Cajero 2"/>
+      </div>
+      <div class="field">
+        <label>Usuario (login)</label>
+        <input type="text" id="uUsuario" placeholder="cajero2" autocomplete="off"/>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>PIN de acceso</label>
+        <input type="password" id="uPin" placeholder="••••" maxlength="8"/>
+      </div>
+      <div class="field">
+        <label>Rol</label>
+        <select id="uRol">
+          <option value="cajero">Cajero</option>
+          <option value="supervisor">Supervisor</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-orange" id="btnCrearUser" onclick="crearUsuario()">Crear usuario</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Usuarios del sistema</div>
+    <div id="listaUsuarios"><div class="empty">Cargando...</div></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">
+  <span class="ti" id="toastIcon"></span>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+  // ⚠️ REEMPLAZA CON TUS DATOS DE SUPABASE
+  const SUPABASE_URL = 'https://snjrcqppawyhzjgqlpkf.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNuanJjcXBwYXd5aHpqZ3FscGtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMzYxNzcsImV4cCI6MjA4OTgxMjE3N30.eoPPwtX_bm00_y5BHyo60oloOXE25RTL_D6RUS3E6-M';
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const MESES = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  window.addEventListener('load', async () => {
+    const raw = sessionStorage.getItem('erp_user');
+    if (!raw) { window.location.href = 'index.html'; return; }
+    const session = JSON.parse(raw);
+    if (session.rol !== 'admin') { window.location.href = 'dashboard.html'; return; }
+
+    // Preseleccionar mes actual
+    const hoy = new Date();
+    document.getElementById('licMes').value  = hoy.getMonth() + 1;
+    document.getElementById('licAnio').value = hoy.getFullYear();
+
+    await cargarLicencias();
+    await cargarUsuarios();
+  });
+
+  // ── LICENCIAS ──
+  async function generarLicencia() {
+    const mes   = parseInt(document.getElementById('licMes').value);
+    const anio  = parseInt(document.getElementById('licAnio').value);
+    const btn   = document.getElementById('btnGenerar');
+    let codigo  = document.getElementById('licCodigo').value.trim().toUpperCase();
+
+    if (!codigo) {
+      const mAbr = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'][mes-1];
+      const rand  = Math.random().toString(36).slice(2,6).toUpperCase();
+      codigo      = `AREPA-${mAbr}${anio}-${rand}`;
+    }
+
+    btn.disabled    = true;
+    btn.innerHTML   = '<span class="spinner"></span>Generando...';
+
+    const { error } = await sb.from('licencias').upsert({ mes, anio, codigo, activa: true }, { onConflict: 'mes,anio' });
+
+    btn.disabled  = false;
+    btn.innerHTML = 'Generar licencia';
+
+    if (error) { toast('Error al generar licencia', 'error'); return; }
+
+    const box = document.getElementById('codigoGenerado');
+    box.textContent = codigo;
+    box.style.display = 'block';
+    document.getElementById('licCodigo').value = '';
+    toast('Licencia generada correctamente', 'success');
+    await cargarLicencias();
+  }
+
+  async function cargarLicencias() {
+    const { data } = await sb.from('licencias').select('*').order('anio', { ascending: false }).order('mes', { ascending: false });
+    const lista = document.getElementById('listaLicencias');
+    if (!data || data.length === 0) { lista.innerHTML = '<div class="empty">Sin licencias registradas</div>'; return; }
+    lista.innerHTML = data.map(l => `
+      <div class="lic-item">
+        <div class="lic-left">
+          <div>
+            <div class="lic-mes">${MESES[l.mes]} ${l.anio}</div>
+            <div class="lic-codigo">${l.codigo}</div>
+          </div>
+        </div>
+        <div class="lic-btns">
+          <span class="lic-badge ${l.activa ? 'lic-activa' : 'lic-inactiva'}">${l.activa ? 'Activa' : 'Inactiva'}</span>
+          <button class="lic-btn ${l.activa ? 'btn-red' : 'btn-gray'}" onclick="toggleLicencia(${l.id}, ${l.activa})">
+            ${l.activa ? 'Desactivar' : 'Activar'}
+          </button>
+        </div>
+      </div>`).join('');
+  }
+
+  async function toggleLicencia(id, activa) {
+    const { error } = await sb.from('licencias').update({ activa: !activa }).eq('id', id);
+    if (error) { toast('Error al actualizar licencia', 'error'); return; }
+    toast(activa ? 'Licencia desactivada' : 'Licencia activada', 'success');
+    await cargarLicencias();
+  }
+
+  // ── USUARIOS ──
+  async function crearUsuario() {
+    const nombre  = document.getElementById('uNombre').value.trim();
+    const usuario = document.getElementById('uUsuario').value.trim().toLowerCase();
+    const pin     = document.getElementById('uPin').value.trim();
+    const rol     = document.getElementById('uRol').value;
+    const btn     = document.getElementById('btnCrearUser');
+
+    if (!nombre || !usuario || !pin) { toast('Completa todos los campos', 'error'); return; }
+    if (pin.length < 4) { toast('El PIN debe tener mínimo 4 dígitos', 'error'); return; }
+
+    btn.disabled  = true;
+    btn.innerHTML = '<span class="spinner"></span>Creando...';
+
+    const { error } = await sb.from('usuarios').insert({ nombre, usuario, pin, rol });
+
+    btn.disabled  = false;
+    btn.innerHTML = 'Crear usuario';
+
+    if (error) {
+      toast(error.code === '23505' ? 'Ese usuario ya existe' : 'Error al crear usuario', 'error');
+      return;
+    }
+
+    document.getElementById('uNombre').value  = '';
+    document.getElementById('uUsuario').value = '';
+    document.getElementById('uPin').value     = '';
+    toast('Usuario creado correctamente', 'success');
+    await cargarUsuarios();
+  }
+
+  async function cargarUsuarios() {
+    const { data } = await sb.from('usuarios').select('*').order('created_at');
+    const lista = document.getElementById('listaUsuarios');
+    if (!data || data.length === 0) { lista.innerHTML = '<div class="empty">Sin usuarios</div>'; return; }
+    lista.innerHTML = data.map(u => `
+      <div class="user-item">
+        <div class="user-left">
+          <div class="user-avatar">${u.nombre.charAt(0).toUpperCase()}</div>
+          <div>
+            <div class="user-nombre">${u.nombre} <span class="rol-badge rol-${u.rol}">${u.rol}</span></div>
+            <div class="user-meta">@${u.usuario} · PIN: ${'•'.repeat(u.pin.length)}</div>
+          </div>
+        </div>
+        <button class="lic-btn ${u.activo ? 'btn-red' : 'btn-gray'}"
+          onclick="toggleUsuario('${u.id}', ${u.activo})">
+          ${u.activo ? 'Desactivar' : 'Activar'}
+        </button>
+      </div>`).join('');
+  }
+
+  async function toggleUsuario(id, activo) {
+    const { error } = await sb.from('usuarios').update({ activo: !activo }).eq('id', id);
+    if (error) { toast('Error al actualizar usuario', 'error'); return; }
+    toast(activo ? 'Usuario desactivado' : 'Usuario activado', 'success');
+    await cargarUsuarios();
+  }
+
+  // ── TOAST ──
+  function toast(msg, tipo = 'success') {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    document.getElementById('toastIcon').textContent = tipo === 'success' ? '✓' : '✕';
+    t.className = `toast ${tipo}`;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>
