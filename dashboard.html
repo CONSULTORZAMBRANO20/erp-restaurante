@@ -299,6 +299,7 @@ canvas{max-height:220px}
     }
 
     await cargarHistorial();
+    if (esAdmin) await cargarHoy();
   });
 
   function aplicarPermisos() {
