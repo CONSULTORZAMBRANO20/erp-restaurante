@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Arepa Yennitas · Ventas</title>
+<title>Arepas Yennitas · Ventas</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -15,7 +15,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .user-pill{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.05);padding:4px 10px;border-radius:99px}
 .user-dot{width:22px;height:22px;border-radius:50%;background:#f97316;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff}
 .user-name{font-size:12px;color:#9ca3af}
-.layout{display:grid;grid-template-columns:1fr;gap:0}
+.layout{display:grid;grid-template-columns:1fr}
 @media(min-width:720px){.layout{grid-template-columns:1fr 340px;height:calc(100vh - 56px)}}
 .catalogo-panel{padding:16px;overflow-y:auto}
 @media(min-width:720px){.catalogo-panel{height:calc(100vh - 56px)}}
@@ -48,6 +48,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .total-label{font-size:13px;color:#6b7280}
 .total-val{font-size:24px;font-weight:600;color:#4ade80}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.field-solo{margin-bottom:12px}
+.field-label{font-size:11px;color:#6b7280;margin-bottom:5px;font-weight:500}
+.field-input{width:100%;background:#0f1117;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:9px 12px;font-size:13px;color:#f1f0ec;outline:none;font-family:inherit;transition:border .2s}
+.field-input:focus{border-color:rgba(249,115,22,0.4)}
+.field-input::placeholder{color:#374151}
 .metodos-label{font-size:11px;color:#6b7280;margin-bottom:8px;font-weight:500}
 .metodos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px}
 .metodo-btn{background:#0f1117;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 4px;text-align:center;cursor:pointer;transition:all .15s;user-select:none}
@@ -56,10 +62,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .metodo-icono{font-size:16px;margin-bottom:3px}
 .metodo-nombre{font-size:10px;color:#9ca3af;font-weight:500}
 .metodo-btn.selected .metodo-nombre{color:#fb923c}
-.notas-field{margin-bottom:12px}
-.notas-field label{display:block;font-size:11px;color:#6b7280;margin-bottom:5px;font-weight:500}
-.notas-field textarea{width:100%;background:#0f1117;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:9px 12px;font-size:13px;color:#f1f0ec;outline:none;resize:none;height:56px;font-family:inherit}
-.notas-field textarea:focus{border-color:rgba(249,115,22,0.4)}
 .btn-guardar{width:100%;background:#f97316;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:600;color:#fff;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:8px}
 .btn-guardar:hover{background:#ea6c0a}
 .btn-guardar:disabled{background:#1f2937;color:#4b5563;cursor:not-allowed}
@@ -97,13 +99,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <div class="layout">
-
-  <!-- CATÁLOGO -->
   <div class="catalogo-panel" id="catalogoPanel">
     <div id="catalogoContenido"></div>
   </div>
 
-  <!-- ORDEN -->
   <div class="orden-panel">
     <div class="orden-title">Orden actual</div>
     <div class="orden-items" id="ordenItems">
@@ -114,12 +113,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <span class="total-label">Total</span>
         <span class="total-val" id="totalOrden">$0</span>
       </div>
+
+      <div class="field-row">
+        <div>
+          <div class="field-label">Mesa <span style="color:#374151;font-size:10px">(opcional)</span></div>
+          <input type="text" class="field-input" id="mesa" placeholder="Ej: Mesa 3"/>
+        </div>
+        <div>
+          <div class="field-label">Notas <span style="color:#374151;font-size:10px">(opcional)</span></div>
+          <input type="text" class="field-input" id="notas" placeholder="Sin picante..."/>
+        </div>
+      </div>
+
       <div class="metodos-label">Método de pago</div>
       <div class="metodos-grid" id="metodosGrid"></div>
-      <div class="notas-field">
-        <label>Notas opcionales</label>
-        <textarea id="notas" placeholder="Sin picante, para llevar..."></textarea>
-      </div>
+
       <button class="btn-guardar" id="btnGuardar" onclick="guardarVenta()">
         <div class="spinner"></div>
         <span class="btn-text">Registrar venta</span>
@@ -127,10 +135,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="btn-limpiar" onclick="limpiarOrden()">Limpiar orden</button>
     </div>
   </div>
-
 </div>
 
-<!-- Historial móvil -->
 <div class="historial-section">
   <div class="hist-title">
     <span>Ventas de hoy</span>
@@ -176,16 +182,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     const categorias = [...new Set(productos.map(p => p.categoria))];
     const contenido  = document.getElementById('catalogoContenido');
     contenido.innerHTML = '';
-
     categorias.forEach(cat => {
       const titulo = document.createElement('div');
       titulo.className = 'cat-title';
       titulo.textContent = cat;
       contenido.appendChild(titulo);
-
       const grid = document.createElement('div');
       grid.className = 'productos-grid';
-
       productos.filter(p => p.categoria === cat).forEach(p => {
         const card = document.createElement('div');
         card.className = 'prod-card';
@@ -197,16 +200,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           </div>
           <div class="prod-qty-row" style="margin-top:8px">
             <div class="qty-ctrl">
-              <div class="qty-btn" onclick="cambiarCantidad(${p.id}, -1, event)">−</div>
+              <div class="qty-btn" onclick="cambiarCantidad(${p.id},-1,event)">−</div>
               <div class="qty-num" id="qty-${p.id}">0</div>
-              <div class="qty-btn" onclick="cambiarCantidad(${p.id}, 1, event)">+</div>
+              <div class="qty-btn" onclick="cambiarCantidad(${p.id},1,event)">+</div>
             </div>
             <div class="prod-sub" id="sub-${p.id}"></div>
           </div>`;
         card.onclick = () => cambiarCantidad(p.id, 1);
         grid.appendChild(card);
       });
-
       contenido.appendChild(grid);
     });
   }
@@ -233,16 +235,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
   function cambiarCantidad(productoId, delta, event) {
     if (event) event.stopPropagation();
-    const actual  = orden[productoId] || 0;
-    const nueva   = Math.max(0, actual + delta);
+    const actual = orden[productoId] || 0;
+    const nueva  = Math.max(0, actual + delta);
     if (nueva === 0) delete orden[productoId];
     else orden[productoId] = nueva;
-
     const producto = productos.find(p => p.id === productoId);
     const card     = document.getElementById('card-' + productoId);
     const qtyEl    = document.getElementById('qty-' + productoId);
     const subEl    = document.getElementById('sub-' + productoId);
-
     qtyEl.textContent = nueva;
     if (nueva > 0) {
       subEl.textContent = '$' + (nueva * parseInt(producto.precio)).toLocaleString('es-CO');
@@ -255,17 +255,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   }
 
   function actualizarOrden() {
-    const items  = Object.entries(orden);
-    const lista  = document.getElementById('ordenItems');
+    const items   = Object.entries(orden);
+    const lista   = document.getElementById('ordenItems');
     const totalEl = document.getElementById('totalOrden');
     let total = 0;
-
     if (items.length === 0) {
       lista.innerHTML = '<div class="orden-empty">Selecciona productos del catálogo</div>';
       totalEl.textContent = '$0';
       return;
     }
-
     lista.innerHTML = items.map(([id, qty]) => {
       const p   = productos.find(x => x.id === parseInt(id));
       const sub = qty * parseInt(p.precio);
@@ -278,16 +276,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="oi-val">$${sub.toLocaleString('es-CO')}</div>
       </div>`;
     }).join('');
-
     totalEl.textContent = '$' + total.toLocaleString('es-CO');
   }
 
   async function guardarVenta() {
     const items = Object.entries(orden);
-    if (items.length === 0)        { toast('Agrega al menos un producto', 'error'); return; }
-    if (!metodoSeleccionado)       { toast('Selecciona el método de pago', 'error'); return; }
+    if (items.length === 0)  { toast('Agrega al menos un producto', 'error'); return; }
+    if (!metodoSeleccionado) { toast('Selecciona el método de pago', 'error'); return; }
 
-    const btn   = document.getElementById('btnGuardar');
+    const btn = document.getElementById('btnGuardar');
     btn.classList.add('loading');
     btn.disabled = true;
 
@@ -304,18 +301,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     const hoy   = new Date();
     const fecha = hoy.toISOString().split('T')[0];
     const hora  = hoy.toTimeString().split(' ')[0];
+    const mesa  = document.getElementById('mesa').value.trim();
     const notas = document.getElementById('notas').value.trim();
 
-    const { data: ventaData, error: ventaError } = await sb.from('ventas').insert({
+    const { data: ventaData, error } = await sb.from('ventas').insert({
       descripcion:    resumen,
       valor:          total,
       metodo_pago_id: metodoSeleccionado.id,
       usuario:        session.usuario,
+      mesa:           mesa || null,
       notas:          notas || null,
       fecha, hora
     }).select('id').single();
 
-    if (ventaError) {
+    if (error) {
       toast('Error al guardar. Intenta de nuevo.', 'error');
       btn.classList.remove('loading');
       btn.disabled = false;
@@ -338,7 +337,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
     btn.classList.remove('loading');
     btn.disabled = false;
-
     toast('Venta registrada — $' + total.toLocaleString('es-CO'), 'success');
     limpiarOrden();
     await cargarHistorial();
@@ -347,6 +345,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   function limpiarOrden() {
     orden = {};
     metodoSeleccionado = null;
+    document.getElementById('mesa').value  = '';
     document.getElementById('notas').value = '';
     document.querySelectorAll('.metodo-btn').forEach(b => b.classList.remove('selected'));
     document.querySelectorAll('.prod-card').forEach(c => c.classList.remove('tiene-cantidad'));
@@ -362,19 +361,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   async function cargarHistorial() {
     const hoy = new Date().toISOString().split('T')[0];
     const { data } = await sb.from('ventas')
-      .select('descripcion, valor, hora, metodos_pago(nombre)')
+      .select('descripcion, valor, hora, mesa, metodos_pago(nombre)')
       .eq('fecha', hoy).order('created_at', { ascending: false }).limit(15);
-
     const total = (data||[]).reduce((s,v) => s + parseFloat(v.valor), 0);
     document.getElementById('totalHoy').textContent = '$' + total.toLocaleString('es-CO');
-
     const lista = document.getElementById('historialLista');
-    if (!data || data.length === 0) { lista.innerHTML = '<div style="text-align:center;padding:20px;color:#374151;font-size:13px">Sin ventas hoy</div>'; return; }
+    if (!data || data.length === 0) {
+      lista.innerHTML = '<div style="text-align:center;padding:20px;color:#374151;font-size:13px">Sin ventas hoy</div>';
+      return;
+    }
     lista.innerHTML = data.map(v => `
       <div class="hist-item">
         <div>
           <div class="hist-desc">${v.descripcion}</div>
-          <div class="hist-meta">${v.hora?.slice(0,5)||''} · ${v.metodos_pago?.nombre||''}</div>
+          <div class="hist-meta">${v.hora?.slice(0,5)||''} · ${v.metodos_pago?.nombre||''}${v.mesa?' · '+v.mesa:''}</div>
         </div>
         <div class="hist-val">+$${parseFloat(v.valor).toLocaleString('es-CO')}</div>
       </div>`).join('');
