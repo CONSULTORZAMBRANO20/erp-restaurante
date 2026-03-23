@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Arepa Yenitas · Dashboard</title>
+<title>Arepas Yennitas · Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
@@ -22,6 +22,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .nav-tab{padding:12px 14px;font-size:13px;color:#6b7280;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;text-decoration:none;display:block}
 .nav-tab:hover{color:#9ca3af}
 .nav-tab.active{color:#fb923c;border-bottom-color:#f97316}
+.nav-tab.hidden{display:none}
 .container{max-width:900px;margin:0 auto;padding:20px 16px}
 .section{display:none}
 .section.active{display:block}
@@ -37,10 +38,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .card{background:#1a1d27;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px;margin-bottom:14px}
 .card-title{font-size:13px;font-weight:500;color:#9ca3af;margin-bottom:16px;text-transform:uppercase;letter-spacing:.05em;display:flex;justify-content:space-between;align-items:center}
 .nav-btns{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
-.nav-btn{background:#1a1d27;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 16px;font-size:13px;color:#9ca3af;cursor:pointer;text-decoration:none;transition:all .2s;display:flex;align-items:center;gap:6px}
+.nav-btn{background:#1a1d27;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 16px;font-size:13px;color:#9ca3af;cursor:pointer;text-decoration:none;transition:all .2s}
 .nav-btn:hover{background:rgba(255,255,255,0.05)}
 .nav-btn.orange{background:rgba(249,115,22,0.12);border-color:rgba(249,115,22,0.3);color:#fb923c}
 .nav-btn.red{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.25);color:#f87171}
+.nav-btn.hidden{display:none}
 .filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
 .filtro-btn{background:#0f1117;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:7px 14px;font-size:12px;color:#6b7280;cursor:pointer;transition:all .15s}
 .filtro-btn.active{background:rgba(249,115,22,0.12);border-color:rgba(249,115,22,0.3);color:#fb923c;font-weight:500}
@@ -53,6 +55,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tx-desc{font-size:13px;color:#e5e7eb;font-weight:500}
 .tx-meta{font-size:11px;color:#4b5563;margin-top:2px}
 .tx-val{font-size:13px;font-weight:600}
+.tx-edit{font-size:11px;padding:3px 8px;border-radius:6px;background:rgba(96,165,250,0.1);color:#60a5fa;border:1px solid rgba(96,165,250,0.2);cursor:pointer;flex-shrink:0;margin-left:8px;transition:background .15s}
+.tx-edit:hover{background:rgba(96,165,250,0.2)}
 .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .bar-label{font-size:12px;color:#6b7280;width:120px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bar-track{flex:1;height:8px;background:rgba(255,255,255,0.05);border-radius:99px;overflow:hidden}
@@ -61,8 +65,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .empty{text-align:center;padding:32px;color:#4b5563;font-size:13px}
 .logout-btn{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:6px 12px;font-size:12px;color:#f87171;cursor:pointer}
 canvas{max-height:220px}
-
-/* ── SALDOS ── */
 .saldo-card{background:#0f1117;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:10px}
 .saldo-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .saldo-cuenta{display:flex;align-items:center;gap:10px}
@@ -78,23 +80,38 @@ canvas{max-height:220px}
 .saldo-det-val{font-size:14px;font-weight:500}
 .saldo-det-val.entrada{color:#4ade80}
 .saldo-det-val.salida{color:#f87171}
-.saldo-filtros{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
 .sf-btn{background:#0f1117;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:7px 14px;font-size:12px;color:#6b7280;cursor:pointer;transition:all .15s}
 .sf-btn.active{background:rgba(249,115,22,0.12);border-color:rgba(249,115,22,0.3);color:#fb923c;font-weight:500}
 .saldo-total{background:#1a1d27;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px;margin-bottom:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .st-item{text-align:center}
 .st-label{font-size:11px;color:#6b7280;margin-bottom:6px}
 .st-val{font-size:18px;font-weight:600}
+
+/* MODAL EDITAR */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:#1a1d27;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:24px;width:100%;max-width:440px}
+.modal-title{font-size:15px;font-weight:500;color:#f1f0ec;margin-bottom:6px}
+.modal-sub{font-size:12px;color:#6b7280;margin-bottom:20px}
+.modal-field{margin-bottom:14px}
+.modal-field label{display:block;font-size:12px;color:#9ca3af;margin-bottom:6px;font-weight:500}
+.modal-field input,.modal-field select{width:100%;background:#0f1117;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:11px 14px;font-size:14px;color:#f1f0ec;outline:none;font-family:inherit;transition:border .2s;appearance:none}
+.modal-field input:focus,.modal-field select:focus{border-color:rgba(249,115,22,0.4)}
+.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.btn-cancel{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:11px;font-size:13px;color:#9ca3af;cursor:pointer}
+.btn-save{background:#f97316;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;transition:background .2s}
+.btn-save:hover{background:#ea6c0a}
+.btn-save:disabled{background:#1f2937;color:#4b5563;cursor:not-allowed}
+.edited-badge{font-size:10px;background:rgba(251,191,36,0.1);color:#fbbf24;border:1px solid rgba(251,191,36,0.2);padding:1px 6px;border-radius:4px;margin-left:4px}
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <div class="logo">
-    <div class="logo-icon" style="background:none;padding:0;overflow:hidden">
-      <img src="logo.png" style="width:32px;height:32px;object-fit:cover;border-radius:8px"/>
-    </div>
-    <span class="logo-name">Arepa Yennitas</span>
+    <div class="logo-icon">🫓</div>
+    <span class="logo-name">Arepas Yennitas</span>
   </div>
   <div class="topbar-right">
     <div class="badge-mes" id="badgeMes">...</div>
@@ -106,23 +123,23 @@ canvas{max-height:220px}
   </div>
 </div>
 
-<div class="nav-tabs">
-  <a class="nav-tab active" onclick="showTab('hoy',this)">Hoy</a>
-  <a class="nav-tab" onclick="showTab('mes',this)">Este mes</a>
-  <a class="nav-tab" onclick="showTab('anio',this)">Este año</a>
-  <a class="nav-tab" onclick="showTab('saldos',this)">Saldos</a>
-  <a class="nav-tab" onclick="showTab('historial',this)">Historial</a>
+<div class="nav-tabs" id="navTabs">
+  <a class="nav-tab admin-only" onclick="showTab('hoy',this)">Hoy</a>
+  <a class="nav-tab admin-only" onclick="showTab('mes',this)">Este mes</a>
+  <a class="nav-tab admin-only" onclick="showTab('anio',this)">Este año</a>
+  <a class="nav-tab admin-only" onclick="showTab('saldos',this)">Saldos</a>
+  <a class="nav-tab" id="tabHistorial" onclick="showTab('historial',this)">Historial</a>
 </div>
 
 <div class="container">
   <div class="nav-btns">
     <a href="ventas.html" class="nav-btn orange">+ Nueva venta</a>
     <a href="egresos.html" class="nav-btn red">− Nuevo egreso</a>
-    <a href="admin.html" class="nav-btn" style="margin-left:auto">⚙ Admin</a>
+    <a href="admin.html" class="nav-btn admin-only" style="margin-left:auto">⚙ Admin</a>
   </div>
 
-  <!-- TAB HOY -->
-  <div class="section active" id="tab-hoy">
+  <!-- HOY -->
+  <div class="section" id="tab-hoy">
     <div class="metrics" id="metricsHoy"></div>
     <div class="card">
       <div class="card-title">Ventas por método de pago · Hoy</div>
@@ -134,7 +151,7 @@ canvas{max-height:220px}
     </div>
   </div>
 
-  <!-- TAB MES -->
+  <!-- MES -->
   <div class="section" id="tab-mes">
     <div class="metrics" id="metricsMes"></div>
     <div class="card">
@@ -147,7 +164,7 @@ canvas{max-height:220px}
     </div>
   </div>
 
-  <!-- TAB AÑO -->
+  <!-- AÑO -->
   <div class="section" id="tab-anio">
     <div class="metrics" id="metricsAnio"></div>
     <div class="card">
@@ -156,9 +173,9 @@ canvas{max-height:220px}
     </div>
   </div>
 
-  <!-- TAB SALDOS -->
+  <!-- SALDOS -->
   <div class="section" id="tab-saldos">
-    <div class="saldo-filtros">
+    <div class="filtros">
       <button class="sf-btn active" onclick="filtrarSaldos('hoy',this)">Hoy</button>
       <button class="sf-btn" onclick="filtrarSaldos('mes',this)">Este mes</button>
       <button class="sf-btn" onclick="filtrarSaldos('anio',this)">Este año</button>
@@ -167,7 +184,7 @@ canvas{max-height:220px}
     <div id="saldosCuentas"></div>
   </div>
 
-  <!-- TAB HISTORIAL -->
+  <!-- HISTORIAL -->
   <div class="section" id="tab-historial">
     <div class="filtros">
       <button class="filtro-btn active" onclick="filtrarHistorial('ventas',this)">Ventas</button>
@@ -178,12 +195,46 @@ canvas{max-height:220px}
     <div class="card">
       <div class="card-title">
         <span id="historialTitulo">Ventas</span>
-        <span id="historialTotal" style="color:#4ade80;font-size:13px"></span>
+        <span id="historialTotal" class="admin-only" style="color:#4ade80;font-size:13px"></span>
       </div>
       <div id="historialLista"></div>
     </div>
   </div>
+</div>
 
+<!-- MODAL EDITAR VENTA -->
+<div class="modal-bg" id="modalEditar">
+  <div class="modal">
+    <div class="modal-title">Editar venta</div>
+    <div class="modal-sub">Solo el administrador puede modificar registros</div>
+    <input type="hidden" id="editVentaId"/>
+    <div class="modal-field">
+      <label>Descripción</label>
+      <input type="text" id="editDesc"/>
+    </div>
+    <div class="modal-row">
+      <div class="modal-field">
+        <label>Valor ($)</label>
+        <input type="number" id="editValor" min="1"/>
+      </div>
+      <div class="modal-field">
+        <label>Mesa</label>
+        <input type="text" id="editMesa" placeholder="Opcional"/>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>Método de pago</label>
+      <select id="editMetodo"></select>
+    </div>
+    <div class="modal-field">
+      <label>Notas</label>
+      <input type="text" id="editNotas" placeholder="Opcional"/>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-save" id="btnSaveEdit" onclick="guardarEdicion()">Guardar cambios</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -194,10 +245,11 @@ canvas{max-height:220px}
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let session = null;
+  let esAdmin = false;
   let chartMes = null;
   let chartAnio = null;
   let historialTipo = 'ventas';
-  let saldosPeriodo = 'hoy';
+  let metodosList = [];
 
   const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   const COLORES_METODO = {
@@ -209,36 +261,75 @@ canvas{max-height:220px}
     const raw = sessionStorage.getItem('erp_user');
     if (!raw) { window.location.href = 'index.html'; return; }
     session = JSON.parse(raw);
+    esAdmin = session.rol === 'admin' || session.rol === 'supervisor';
+
     document.getElementById('userName').textContent    = session.nombre;
     document.getElementById('userInitial').textContent = session.nombre.charAt(0).toUpperCase();
+
     const hoy = new Date();
     document.getElementById('badgeMes').textContent = MESES[hoy.getMonth()] + ' ' + hoy.getFullYear();
+
     const hoyStr = hoy.toISOString().split('T')[0];
     document.getElementById('filtroDesde').value = hoyStr.slice(0,7) + '-01';
     document.getElementById('filtroHasta').value = hoyStr;
-    await cargarHoy();
+
+    // Aplicar permisos por rol
+    aplicarPermisos();
+
+    // Cargar métodos para el modal
+    const { data: mets } = await sb.from('metodos_pago').select('*').eq('activo', true).order('id');
+    metodosList = mets || [];
+    const sel = document.getElementById('editMetodo');
+    metodosList.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = m.nombre;
+      sel.appendChild(opt);
+    });
+
+    if (esAdmin) {
+      // Admin: mostrar tab Hoy por defecto
+      const primerTab = document.querySelector('.nav-tab.admin-only');
+      if (primerTab) { primerTab.classList.add('active'); showTab('hoy', primerTab); }
+    } else {
+      // Cajero: ir directo a historial
+      const tabHist = document.getElementById('tabHistorial');
+      tabHist.classList.add('active');
+      showTab('historial', tabHist);
+    }
+
+    await cargarHistorial();
   });
 
+  function aplicarPermisos() {
+    if (!esAdmin) {
+      // Ocultar tabs y botones de admin
+      document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
+    }
+  }
+
   function showTab(tab, el) {
+    // Cajero solo puede ver historial
+    if (!esAdmin && tab !== 'historial') return;
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
     el.classList.add('active');
-    if (tab === 'mes')      cargarMes();
-    if (tab === 'anio')     cargarAnio();
-    if (tab === 'saldos')   cargarSaldos('hoy');
+    if (tab === 'mes')       cargarMes();
+    if (tab === 'anio')      cargarAnio();
+    if (tab === 'saldos')    cargarSaldos('hoy');
     if (tab === 'historial') cargarHistorial();
   }
 
   // ── HOY ──
   async function cargarHoy() {
     const hoy = new Date().toISOString().split('T')[0];
-    const [{ data: ventas }, { data: egresos }] = await Promise.all([
-      sb.from('ventas').select('valor,metodo_pago_id,descripcion,hora,metodos_pago(nombre)').eq('fecha',hoy).order('created_at',{ascending:false}),
+    const [{ data: ventas },{ data: egresos }] = await Promise.all([
+      sb.from('ventas').select('valor,metodo_pago_id,descripcion,hora,mesa,metodos_pago(nombre)').eq('fecha',hoy).order('created_at',{ascending:false}),
       sb.from('egresos').select('valor,descripcion,hora,categorias_egreso(nombre,color)').eq('fecha',hoy).order('created_at',{ascending:false})
     ]);
-    const totalV   = (ventas||[]).reduce((s,v) => s+parseFloat(v.valor),0);
-    const totalE   = (egresos||[]).reduce((s,e) => s+parseFloat(e.valor),0);
+    const totalV   = (ventas||[]).reduce((s,v)=>s+parseFloat(v.valor),0);
+    const totalE   = (egresos||[]).reduce((s,e)=>s+parseFloat(e.valor),0);
     const utilidad = totalV - totalE;
     const margen   = totalV > 0 ? ((utilidad/totalV)*100).toFixed(1) : 0;
 
@@ -264,8 +355,8 @@ canvas{max-height:220px}
         </div>`).join('');
 
     const todas = [
-      ...(ventas||[]).slice(0,8).map(v=>({tipo:'venta',desc:v.descripcion,meta:v.hora?.slice(0,5)+' · '+(v.metodos_pago?.nombre||''),val:parseFloat(v.valor)})),
-      ...(egresos||[]).slice(0,4).map(e=>({tipo:'egreso',desc:e.descripcion,meta:e.hora?.slice(0,5)+' · '+(e.categorias_egreso?.nombre||''),val:parseFloat(e.valor),color:e.categorias_egreso?.color}))
+      ...(ventas||[]).slice(0,8).map(v=>({tipo:'venta',id:v.id,desc:v.descripcion,meta:(v.hora?.slice(0,5)||'')+' · '+(v.metodos_pago?.nombre||'')+(v.mesa?' · '+v.mesa:''),val:parseFloat(v.valor),editado:v.editado_en})),
+      ...(egresos||[]).slice(0,4).map(e=>({tipo:'egreso',desc:e.descripcion,meta:(e.hora?.slice(0,5)||'')+' · '+(e.categorias_egreso?.nombre||''),val:parseFloat(e.valor),color:e.categorias_egreso?.color}))
     ].slice(0,12);
 
     document.getElementById('txHoy').innerHTML = todas.length === 0
@@ -274,9 +365,15 @@ canvas{max-height:220px}
         <div class="tx-item">
           <div class="tx-left">
             <div class="tx-dot" style="background:${t.tipo==='venta'?'#4ade80':(t.color||'#f87171')}"></div>
-            <div><div class="tx-desc">${t.desc}</div><div class="tx-meta">${t.meta}</div></div>
+            <div>
+              <div class="tx-desc">${t.desc}${t.editado?'<span class="edited-badge">editado</span>':''}</div>
+              <div class="tx-meta">${t.meta}</div>
+            </div>
           </div>
-          <div class="tx-val" style="color:${t.tipo==='venta'?'#4ade80':'#f87171'}">${t.tipo==='venta'?'+':'-'}$${t.val.toLocaleString('es-CO')}</div>
+          <div style="display:flex;align-items:center">
+            <div class="tx-val" style="color:${t.tipo==='venta'?'#4ade80':'#f87171'}">${t.tipo==='venta'?'+':'-'}$${t.val.toLocaleString('es-CO')}</div>
+            ${t.tipo==='venta' && esAdmin ? `<span class="tx-edit" onclick="abrirEditar('${t.id}')">Editar</span>`:''}
+          </div>
         </div>`).join('');
   }
 
@@ -287,7 +384,6 @@ canvas{max-height:220px}
     const mes  = String(hoy.getMonth()+1).padStart(2,'0');
     const desde = `${anio}-${mes}-01`;
     const hasta = hoy.toISOString().split('T')[0];
-
     const [{ data: ventas },{ data: egresos }] = await Promise.all([
       sb.from('ventas').select('valor,fecha').gte('fecha',desde).lte('fecha',hasta),
       sb.from('egresos').select('valor,fecha,categorias_egreso(nombre,color)').gte('fecha',desde).lte('fecha',hasta)
@@ -296,28 +392,19 @@ canvas{max-height:220px}
     const totalE   = (egresos||[]).reduce((s,e)=>s+parseFloat(e.valor),0);
     const utilidad = totalV - totalE;
     const margen   = totalV > 0 ? ((utilidad/totalV)*100).toFixed(1) : 0;
-
     document.getElementById('metricsMes').innerHTML =
       metricCard('Ventas del mes','$'+totalV.toLocaleString('es-CO'),(ventas?.length||0)+' transacciones','gray') +
       metricCard('Egresos del mes','$'+totalE.toLocaleString('es-CO'),'','red') +
       metricCard('Utilidad del mes','$'+utilidad.toLocaleString('es-CO'),'Margen '+margen+'%',utilidad>=0?'green':'red') +
       metricCard('Días activos',[...new Set((ventas||[]).map(v=>v.fecha))].length,'con ventas','gray');
-
     const porDia = {};
     (ventas||[]).forEach(v=>{ porDia[v.fecha]=(porDia[v.fecha]||0)+parseFloat(v.valor); });
     const labels = Object.keys(porDia).sort().map(d=>d.slice(8));
     const vals   = Object.keys(porDia).sort().map(k=>porDia[k]);
     if (chartMes) chartMes.destroy();
-    const ctx = document.getElementById('chartMes').getContext('2d');
-    chartMes = new Chart(ctx,{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:'rgba(249,115,22,0.7)',borderRadius:4,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6b7280',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#6b7280',font:{size:11},callback:v=>'$'+v.toLocaleString('es-CO')},grid:{color:'rgba(255,255,255,0.04)'}}}}});
-
+    chartMes = new Chart(document.getElementById('chartMes').getContext('2d'),{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:'rgba(249,115,22,0.7)',borderRadius:4,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6b7280',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#6b7280',font:{size:11},callback:v=>'$'+v.toLocaleString('es-CO')},grid:{color:'rgba(255,255,255,0.04)'}}}}});
     const cats = {};
-    (egresos||[]).forEach(e=>{
-      const n=e.categorias_egreso?.nombre||'Otro';
-      const c=e.categorias_egreso?.color||'#6b7280';
-      if(!cats[n]) cats[n]={val:0,color:c};
-      cats[n].val+=parseFloat(e.valor);
-    });
+    (egresos||[]).forEach(e=>{ const n=e.categorias_egreso?.nombre||'Otro'; const c=e.categorias_egreso?.color||'#6b7280'; if(!cats[n]) cats[n]={val:0,color:c}; cats[n].val+=parseFloat(e.valor); });
     const maxC = Math.max(...Object.values(cats).map(c=>c.val),1);
     document.getElementById('barrasCatMes').innerHTML = Object.keys(cats).length===0
       ? '<div class="empty">Sin egresos este mes</div>'
@@ -331,7 +418,7 @@ canvas{max-height:220px}
 
   // ── AÑO ──
   async function cargarAnio() {
-    const anio  = new Date().getFullYear();
+    const anio = new Date().getFullYear();
     const [{ data: ventas },{ data: egresos }] = await Promise.all([
       sb.from('ventas').select('valor,fecha').gte('fecha',`${anio}-01-01`).lte('fecha',`${anio}-12-31`),
       sb.from('egresos').select('valor,fecha').gte('fecha',`${anio}-01-01`).lte('fecha',`${anio}-12-31`)
@@ -340,115 +427,73 @@ canvas{max-height:220px}
     const totalE   = (egresos||[]).reduce((s,e)=>s+parseFloat(e.valor),0);
     const utilidad = totalV - totalE;
     const margen   = totalV > 0 ? ((utilidad/totalV)*100).toFixed(1) : 0;
-
     document.getElementById('metricsAnio').innerHTML =
       metricCard('Ventas del año','$'+totalV.toLocaleString('es-CO'),'','gray') +
       metricCard('Egresos del año','$'+totalE.toLocaleString('es-CO'),'','red') +
       metricCard('Utilidad del año','$'+utilidad.toLocaleString('es-CO'),'Margen '+margen+'%',utilidad>=0?'green':'red') +
       metricCard('Meses activos',[...new Set((ventas||[]).map(v=>v.fecha.slice(0,7)))].length,'con ventas','gray');
-
     const porMes = {};
     (ventas||[]).forEach(v=>{ const m=parseInt(v.fecha.slice(5,7))-1; porMes[m]=(porMes[m]||0)+parseFloat(v.valor); });
     if (chartAnio) chartAnio.destroy();
-    const ctx = document.getElementById('chartAnio').getContext('2d');
-    chartAnio = new Chart(ctx,{type:'bar',data:{labels:MESES,datasets:[{data:MESES.map((_,i)=>porMes[i]||0),backgroundColor:'rgba(249,115,22,0.7)',borderRadius:4,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6b7280',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#6b7280',font:{size:11},callback:v=>'$'+v.toLocaleString('es-CO')},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+    chartAnio = new Chart(document.getElementById('chartAnio').getContext('2d'),{type:'bar',data:{labels:MESES,datasets:[{data:MESES.map((_,i)=>porMes[i]||0),backgroundColor:'rgba(249,115,22,0.7)',borderRadius:4,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6b7280',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#6b7280',font:{size:11},callback:v=>'$'+v.toLocaleString('es-CO')},grid:{color:'rgba(255,255,255,0.04)'}}}}});
   }
 
-  // ── SALDOS POR CUENTA ──
-  function filtrarSaldos(periodo, el) {
-    saldosPeriodo = periodo;
-    document.querySelectorAll('.sf-btn').forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-    cargarSaldos(periodo);
-  }
-
+  // ── SALDOS ──
   async function cargarSaldos(periodo) {
-    const hoy   = new Date();
+    const hoy    = new Date();
     const hoyStr = hoy.toISOString().split('T')[0];
     let desde, hasta;
-
-    if (periodo === 'hoy') {
-      desde = hoyStr; hasta = hoyStr;
-    } else if (periodo === 'mes') {
-      const mes = String(hoy.getMonth()+1).padStart(2,'0');
-      desde = `${hoy.getFullYear()}-${mes}-01`; hasta = hoyStr;
-    } else {
-      desde = `${hoy.getFullYear()}-01-01`; hasta = `${hoy.getFullYear()}-12-31`;
-    }
-
+    if (periodo==='hoy') { desde=hoyStr; hasta=hoyStr; }
+    else if (periodo==='mes') { const m=String(hoy.getMonth()+1).padStart(2,'0'); desde=`${hoy.getFullYear()}-${m}-01`; hasta=hoyStr; }
+    else { desde=`${hoy.getFullYear()}-01-01`; hasta=`${hoy.getFullYear()}-12-31`; }
     const [{ data: ventas },{ data: egresos },{ data: metodos }] = await Promise.all([
       sb.from('ventas').select('valor,metodo_pago_id,metodos_pago(nombre)').gte('fecha',desde).lte('fecha',hasta),
       sb.from('egresos').select('valor,metodo_pago_id,metodos_pago(nombre)').gte('fecha',desde).lte('fecha',hasta).not('metodo_pago_id','is',null),
       sb.from('metodos_pago').select('*').eq('activo',true).order('id')
     ]);
-
-    const entradas = {};
-    const salidas  = {};
-    (metodos||[]).forEach(m => { entradas[m.nombre] = 0; salidas[m.nombre] = 0; });
-    (ventas||[]).forEach(v  => { const n=v.metodos_pago?.nombre||'Otro'; entradas[n]=(entradas[n]||0)+parseFloat(v.valor); });
-    (egresos||[]).forEach(e => { const n=e.metodos_pago?.nombre||'Otro'; salidas[n]=(salidas[n]||0)+parseFloat(e.valor); });
-
-    const totalEntradas = Object.values(entradas).reduce((s,v)=>s+v,0);
-    const totalSalidas  = Object.values(salidas).reduce((s,v)=>s+v,0);
-    const totalNeto     = totalEntradas - totalSalidas;
-
-    document.getElementById('saldoTotales').innerHTML = `
-      <div class="st-item">
-        <div class="st-label">Total entradas</div>
-        <div class="st-val" style="color:#4ade80">$${totalEntradas.toLocaleString('es-CO')}</div>
-      </div>
-      <div class="st-item">
-        <div class="st-label">Total salidas</div>
-        <div class="st-val" style="color:#f87171">$${totalSalidas.toLocaleString('es-CO')}</div>
-      </div>
-      <div class="st-item">
-        <div class="st-label">Saldo neto</div>
-        <div class="st-val" style="color:${totalNeto>=0?'#4ade80':'#f87171'}">$${totalNeto.toLocaleString('es-CO')}</div>
+    const entradas={}, salidas={};
+    (metodos||[]).forEach(m=>{ entradas[m.nombre]=0; salidas[m.nombre]=0; });
+    (ventas||[]).forEach(v=>{ const n=v.metodos_pago?.nombre||'Otro'; entradas[n]=(entradas[n]||0)+parseFloat(v.valor); });
+    (egresos||[]).forEach(e=>{ const n=e.metodos_pago?.nombre||'Otro'; salidas[n]=(salidas[n]||0)+parseFloat(e.valor); });
+    const totalE2=Object.values(entradas).reduce((s,v)=>s+v,0);
+    const totalS=Object.values(salidas).reduce((s,v)=>s+v,0);
+    const totalN=totalE2-totalS;
+    document.getElementById('saldoTotales').innerHTML=`
+      <div class="st-item"><div class="st-label">Total entradas</div><div class="st-val" style="color:#4ade80">$${totalE2.toLocaleString('es-CO')}</div></div>
+      <div class="st-item"><div class="st-label">Total salidas</div><div class="st-val" style="color:#f87171">$${totalS.toLocaleString('es-CO')}</div></div>
+      <div class="st-item"><div class="st-label">Saldo neto</div><div class="st-val" style="color:${totalN>=0?'#4ade80':'#f87171'}">$${totalN.toLocaleString('es-CO')}</div></div>`;
+    const activos=Object.keys(entradas).filter(n=>entradas[n]>0||salidas[n]>0);
+    const cuentas=document.getElementById('saldosCuentas');
+    if(activos.length===0){cuentas.innerHTML='<div class="empty">Sin movimientos</div>';return;}
+    cuentas.innerHTML=activos.map(nombre=>{
+      const entrada=entradas[nombre]||0, salida=salidas[nombre]||0, neto=entrada-salida;
+      const color=COLORES_METODO[nombre]||'#9ca3af';
+      const clase=neto>0?'positivo':neto<0?'negativo':'neutro';
+      return `<div class="saldo-card">
+        <div class="saldo-header">
+          <div class="saldo-cuenta"><div class="saldo-dot" style="background:${color}"></div><div class="saldo-nombre">${nombre}</div></div>
+          <div class="saldo-neto ${clase}">$${neto.toLocaleString('es-CO')}</div>
+        </div>
+        <div class="saldo-detalle">
+          <div class="saldo-det-item"><div class="saldo-det-label">Entradas (ventas)</div><div class="saldo-det-val entrada">+$${entrada.toLocaleString('es-CO')}</div></div>
+          <div class="saldo-det-item"><div class="saldo-det-label">Salidas (egresos)</div><div class="saldo-det-val salida">-$${salida.toLocaleString('es-CO')}</div></div>
+        </div>
       </div>`;
-
-    const cuentas = document.getElementById('saldosCuentas');
-    const activos = Object.keys(entradas).filter(n => entradas[n] > 0 || salidas[n] > 0);
-
-    if (activos.length === 0) {
-      cuentas.innerHTML = '<div class="empty">Sin movimientos en este período</div>';
-      return;
-    }
-
-    cuentas.innerHTML = activos.map(nombre => {
-      const entrada = entradas[nombre] || 0;
-      const salida  = salidas[nombre]  || 0;
-      const neto    = entrada - salida;
-      const color   = COLORES_METODO[nombre] || '#9ca3af';
-      const claseNeto = neto > 0 ? 'positivo' : neto < 0 ? 'negativo' : 'neutro';
-      return `
-        <div class="saldo-card">
-          <div class="saldo-header">
-            <div class="saldo-cuenta">
-              <div class="saldo-dot" style="background:${color}"></div>
-              <div class="saldo-nombre">${nombre}</div>
-            </div>
-            <div class="saldo-neto ${claseNeto}">$${neto.toLocaleString('es-CO')}</div>
-          </div>
-          <div class="saldo-detalle">
-            <div class="saldo-det-item">
-              <div class="saldo-det-label">Entradas (ventas)</div>
-              <div class="saldo-det-val entrada">+$${entrada.toLocaleString('es-CO')}</div>
-            </div>
-            <div class="saldo-det-item">
-              <div class="saldo-det-label">Salidas (egresos)</div>
-              <div class="saldo-det-val salida">-$${salida.toLocaleString('es-CO')}</div>
-            </div>
-          </div>
-        </div>`;
     }).join('');
+  }
+
+  function filtrarSaldos(periodo, el) {
+    document.querySelectorAll('.sf-btn').forEach(b=>b.classList.remove('active'));
+    el.classList.add('active');
+    cargarSaldos(periodo);
   }
 
   // ── HISTORIAL ──
   function filtrarHistorial(tipo, el) {
     historialTipo = tipo;
-    document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.filtro-btn').forEach(b=>b.classList.remove('active'));
     el.classList.add('active');
-    document.getElementById('historialTitulo').textContent = tipo === 'ventas' ? 'Ventas' : 'Egresos';
+    document.getElementById('historialTitulo').textContent = tipo==='ventas'?'Ventas':'Egresos';
     cargarHistorial();
   }
 
@@ -456,46 +501,103 @@ canvas{max-height:220px}
     const desde = document.getElementById('filtroDesde').value;
     const hasta = document.getElementById('filtroHasta').value;
     if (!desde || !hasta) return;
-
     let data;
-    if (historialTipo === 'ventas') {
+    if (historialTipo==='ventas') {
       ({ data } = await sb.from('ventas').select('*,metodos_pago(nombre)').gte('fecha',desde).lte('fecha',hasta).order('fecha',{ascending:false}).order('hora',{ascending:false}));
     } else {
       ({ data } = await sb.from('egresos').select('*,categorias_egreso(nombre,color),metodos_pago(nombre)').gte('fecha',desde).lte('fecha',hasta).order('fecha',{ascending:false}).order('hora',{ascending:false}));
     }
+    const total=(data||[]).reduce((s,r)=>s+parseFloat(r.valor),0);
+    if (esAdmin) document.getElementById('historialTotal').textContent='$'+total.toLocaleString('es-CO');
 
-    const total = (data||[]).reduce((s,r)=>s+parseFloat(r.valor),0);
-    document.getElementById('historialTotal').textContent = '$'+total.toLocaleString('es-CO');
-
-    const lista = document.getElementById('historialLista');
-    if (!data || data.length === 0) { lista.innerHTML='<div class="empty">Sin registros en este período</div>'; return; }
-
-    lista.innerHTML = data.map(r => {
-      const esVenta = historialTipo === 'ventas';
-      const meta = esVenta
-        ? `${r.fecha} · ${r.hora?.slice(0,5)||''} · ${r.metodos_pago?.nombre||''}`
+    const lista=document.getElementById('historialLista');
+    if(!data||data.length===0){lista.innerHTML='<div class="empty">Sin registros en este período</div>';return;}
+    lista.innerHTML=data.map(r=>{
+      const esVenta=historialTipo==='ventas';
+      const meta=esVenta
+        ? `${r.fecha} · ${r.hora?.slice(0,5)||''} · ${r.metodos_pago?.nombre||''}${r.mesa?' · '+r.mesa:''}`
         : `${r.fecha} · ${r.hora?.slice(0,5)||''} · ${r.categorias_egreso?.nombre||''} · ${r.metodos_pago?.nombre||'Sin cuenta'}${r.proveedor?' · '+r.proveedor:''}`;
-      const color    = esVenta ? '#4ade80' : (r.categorias_egreso?.color||'#f87171');
-      const valColor = esVenta ? '#4ade80' : '#f87171';
-      return `
-        <div class="tx-item">
-          <div class="tx-left">
-            <div class="tx-dot" style="background:${color}"></div>
-            <div><div class="tx-desc">${r.descripcion}</div><div class="tx-meta">${meta}</div></div>
+      const color=esVenta?'#4ade80':(r.categorias_egreso?.color||'#f87171');
+      const valColor=esVenta?'#4ade80':'#f87171';
+      const editBadge=r.editado_en?'<span class="edited-badge">editado</span>':'';
+      return `<div class="tx-item">
+        <div class="tx-left">
+          <div class="tx-dot" style="background:${color}"></div>
+          <div>
+            <div class="tx-desc">${r.descripcion}${editBadge}</div>
+            <div class="tx-meta">${meta}</div>
           </div>
-          <div class="tx-val" style="color:${valColor}">${esVenta?'+':'-'}$${parseFloat(r.valor).toLocaleString('es-CO')}</div>
-        </div>`;
+        </div>
+        <div style="display:flex;align-items:center">
+          ${esAdmin?`<div class="tx-val" style="color:${valColor}">${esVenta?'+':'-'}$${parseFloat(r.valor).toLocaleString('es-CO')}</div>`:'<div class="tx-val" style="color:'+valColor+'">•••</div>'}
+          ${esVenta && esAdmin?`<span class="tx-edit" onclick="abrirEditar('${r.id}')">Editar</span>`:''}
+        </div>
+      </div>`;
     }).join('');
   }
 
-  function metricCard(label, val, sub, tipo) {
-    const subColor = tipo==='green'?'#4ade80':tipo==='red'?'#f87171':'#4b5563';
+  // ── EDITAR VENTA ──
+  async function abrirEditar(id) {
+    const { data } = await sb.from('ventas').select('*').eq('id', id).single();
+    if (!data) return;
+    document.getElementById('editVentaId').value = data.id;
+    document.getElementById('editDesc').value    = data.descripcion;
+    document.getElementById('editValor').value   = parseInt(data.valor);
+    document.getElementById('editMesa').value    = data.mesa || '';
+    document.getElementById('editNotas').value   = data.notas || '';
+    document.getElementById('editMetodo').value  = data.metodo_pago_id;
+    document.getElementById('modalEditar').classList.add('open');
+  }
+
+  function cerrarModal() {
+    document.getElementById('modalEditar').classList.remove('open');
+  }
+
+  async function guardarEdicion() {
+    const id    = document.getElementById('editVentaId').value;
+    const desc  = document.getElementById('editDesc').value.trim();
+    const valor = parseFloat(document.getElementById('editValor').value);
+    const mesa  = document.getElementById('editMesa').value.trim();
+    const notas = document.getElementById('editNotas').value.trim();
+    const metodoId = parseInt(document.getElementById('editMetodo').value);
+    const btn   = document.getElementById('btnSaveEdit');
+
+    if (!desc)              { alert('La descripción no puede estar vacía'); return; }
+    if (!valor || valor<=0) { alert('Ingresa un valor válido'); return; }
+
+    btn.disabled = true; btn.textContent = 'Guardando...';
+
+    const { error } = await sb.from('ventas').update({
+      descripcion:    desc,
+      valor:          valor,
+      metodo_pago_id: metodoId,
+      mesa:           mesa || null,
+      notas:          notas || null,
+      editado_en:     new Date().toISOString(),
+      editado_por:    session.usuario
+    }).eq('id', id);
+
+    btn.disabled = false; btn.textContent = 'Guardar cambios';
+
+    if (error) { alert('Error al guardar. Intenta de nuevo.'); return; }
+
+    cerrarModal();
+    await cargarHistorial();
+    if (document.getElementById('tab-hoy').classList.contains('active')) cargarHoy();
+  }
+
+  document.getElementById('modalEditar').addEventListener('click', e => {
+    if (e.target === document.getElementById('modalEditar')) cerrarModal();
+  });
+
+  function metricCard(label,val,sub,tipo) {
+    const subColor=tipo==='green'?'#4ade80':tipo==='red'?'#f87171':'#4b5563';
     return `<div class="metric"><div class="metric-label">${label}</div><div class="metric-val">${val}</div>${sub?`<div class="metric-sub" style="color:${subColor}">${sub}</div>`:''}</div>`;
   }
 
   function logout() {
     sessionStorage.removeItem('erp_user');
-    window.location.href = 'index.html';
+    window.location.href='index.html';
   }
 </script>
 </body>
