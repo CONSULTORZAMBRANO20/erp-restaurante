@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Arepa ERP · Ventas</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1117;color:#f1f0ec;min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{background:#1a1d27;border-bottom:1px solid rgba(255,255,255,0.06);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.back-btn{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:6px 12px;font-size:13px;color:#9ca3af;cursor:pointer;text-decoration:none;transition:background .2s}
+.back-btn:hover{background:rgba(255,255,255,0.1)}
+.page-title{font-size:15px;font-weight:500;color:#f1f0ec}
+.user-pill{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.05);padding:5px 12px;border-radius:99px}
+.user-dot{width:22px;height:22px;border-radius:50%;background:#f97316;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff}
+.user-name{font-size:12px;color:#9ca3af}
+
+/* ── LAYOUT ── */
+.container{max-width:560px;margin:0 auto;padding:24px 16px}
+
+/* ── CARD ── */
+.card{background:#1a1d27;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:24px;margin-bottom:16px}
+.card-title{font-size:13px;font-weight:500;color:#9ca3af;margin-bottom:20px;text-transform:uppercase;letter-spacing:.05em}
+
+/* ── FORM ── */
+.field{margin-bottom:18px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:12px;color:#9ca3af;margin-bottom:7px;font-weight:500}
+.field input,.field textarea,.field select{width:100%;background:#0f1117;border:1px solid rgba(255,255,255,0.1);border-radius:9px;padding:12px 14px;font-size:15px;color:#f1f0ec;outline:none;transition:border .2s;font-family:inherit}
+.field input:focus,.field textarea:focus{border-color:rgba(249,115,22,0.5);box-shadow:0 0 0 3px rgba(249,115,22,0.08)}
+.field input::placeholder,.field textarea::placeholder{color:#374151}
+.field textarea{resize:none;height:72px;line-height:1.5}
+
+/* Valor con símbolo $ */
+.input-prefix{position:relative}
+.input-prefix span{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#6b7280;font-size:15px;pointer-events:none}
+.input-prefix input{padding-left:28px}
+
+/* ── MÉTODOS DE PAGO ── */
+.metodos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(max-width:400px){.metodos-grid{grid-template-columns:repeat(2,1fr)}}
+.metodo-btn{background:#0f1117;border:1px solid rgba(255,255,255,0.08);border-radius:9px;padding:11px 8px;text-align:center;cursor:pointer;transition:all .15s;user-select:none}
+.metodo-btn:hover{border-color:rgba(249,115,22,0.3);background:rgba(249,115,22,0.05)}
+.metodo-btn.selected{background:rgba(249,115,22,0.12);border-color:rgba(249,115,22,0.5);box-shadow:0 0 0 2px rgba(249,115,22,0.15)}
+.metodo-btn .icono{font-size:20px;margin-bottom:5px}
+.metodo-btn .nombre{font-size:12px;color:#9ca3af;font-weight:500}
+.metodo-btn.selected .nombre{color:#fb923c}
+
+/* ── RESUMEN ── */
+.resumen{background:#0f1117;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.resumen-label{font-size:12px;color:#6b7280}
+.resumen-valor{font-size:22px;font-weight:600;color:#4ade80}
+
+/* ── BOTÓN GUARDAR ── */
+.btn-guardar{width:100%;background:#f97316;border:none;border-radius:10px;padding:15px;font-size:15px;font-weight:600;color:#fff;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-guardar:hover{background:#ea6c0a}
+.btn-guardar:disabled{background:#1f2937;color:#4b5563;cursor:not-allowed}
+.btn-guardar .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.btn-guardar.loading .spinner{display:block}
+.btn-guardar.loading .btn-text{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1d27;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:10px;font-size:14px;color:#f1f0ec;transition:transform .3s ease;z-index:999;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success .toast-icon{color:#4ade80;font-size:18px}
+.toast.error .toast-icon{color:#f87171;font-size:18px}
+
+/* ── HISTORIAL ── */
+.historial-item{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.historial-item:last-child{border-bottom:none}
+.h-left{display:flex;align-items:center;gap:10px}
+.h-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0}
+.h-desc{font-size:13px;color:#e5e7eb;font-weight:500}
+.h-meta{font-size:11px;color:#4b5563;margin-top:2px}
+.h-val{font-size:14px;font-weight:600;color:#4ade80}
+.empty-state{text-align:center;padding:24px;color:#4b5563;font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="dashboard.html" class="back-btn">← Volver</a>
+    <span class="page-title">Registrar venta</span>
+  </div>
+  <div class="user-pill">
+    <div class="user-dot" id="userInitial">?</div>
+    <span class="user-name" id="userName">...</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Formulario -->
+  <div class="card">
+    <div class="card-title">Nueva venta</div>
+
+    <div class="field">
+      <label>Descripción del producto o servicio</label>
+      <input type="text" id="descripcion" placeholder="Ej: Arepa rellena pollo + jugo lulo" autocomplete="off"/>
+    </div>
+
+    <div class="field">
+      <label>Valor</label>
+      <div class="input-prefix">
+        <span>$</span>
+        <input type="number" id="valor" placeholder="15000" min="1" inputmode="numeric"/>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Método de pago</label>
+      <div class="metodos-grid" id="metodosGrid">
+        <!-- Se carga dinámicamente desde Supabase -->
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Notas opcionales</label>
+      <textarea id="notas" placeholder="Ej: sin picante, para llevar..."></textarea>
+    </div>
+  </div>
+
+  <!-- Resumen antes de guardar -->
+  <div class="resumen">
+    <div>
+      <div class="resumen-label">Total a registrar</div>
+      <div style="font-size:12px;color:#4b5563;margin-top:2px" id="resumenMetodo">Selecciona método de pago</div>
+    </div>
+    <div class="resumen-valor" id="resumenValor">$0</div>
+  </div>
+
+  <button class="btn-guardar" id="btnGuardar" onclick="guardarVenta()">
+    <div class="spinner"></div>
+    <span class="btn-text">Guardar venta</span>
+  </button>
+
+  <!-- Historial de hoy -->
+  <div class="card" style="margin-top:24px">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+      <span>Ventas de hoy</span>
+      <span id="totalHoy" style="font-size:13px;color:#4ade80;font-weight:500">$0</span>
+    </div>
+    <div id="historialLista">
+      <div class="empty-state">Aún no hay ventas hoy</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast de confirmación -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toastIcon"></span>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+  // ⚠️ REEMPLAZA CON TUS DATOS DE SUPABASE
+  const SUPABASE_URL = 'https://snjrcqppawyhzjgqlpkf.supabase.co';
+  const SUPABASE_KEY = 'snjrcqppawyhzjgqlpkf';
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let metodoSeleccionado = null;
+  let session = null;
+
+  // ── INIT ──
+  window.addEventListener('load', async () => {
+    // Verificar sesión
+    const raw = sessionStorage.getItem('erp_user');
+    if (!raw) { window.location.href = 'index.html'; return; }
+    session = JSON.parse(raw);
+
+    // Mostrar usuario
+    document.getElementById('userName').textContent    = session.nombre;
+    document.getElementById('userInitial').textContent = session.nombre.charAt(0).toUpperCase();
+
+    await cargarMetodos();
+    await cargarHistorial();
+
+    // Actualizar resumen en tiempo real
+    document.getElementById('valor').addEventListener('input', actualizarResumen);
+  });
+
+  // ── CARGAR MÉTODOS DE PAGO ──
+  async function cargarMetodos() {
+    const { data } = await sb.from('metodos_pago').select('*').eq('activo', true).order('id');
+    const iconos   = { 'Efectivo':'💵', 'Nequi':'📱', 'Daviplata':'📲', 'Transferencia':'🏦', 'Tarjeta débito':'💳', 'Tarjeta crédito':'💳' };
+    const grid     = document.getElementById('metodosGrid');
+    grid.innerHTML = '';
+
+    (data || []).forEach(m => {
+      const div       = document.createElement('div');
+      div.className   = 'metodo-btn';
+      div.dataset.id  = m.id;
+      div.dataset.nombre = m.nombre;
+      div.innerHTML   = `<div class="icono">${iconos[m.nombre] || '💰'}</div><div class="nombre">${m.nombre}</div>`;
+      div.onclick     = () => seleccionarMetodo(div, m.id, m.nombre);
+      grid.appendChild(div);
+    });
+  }
+
+  function seleccionarMetodo(el, id, nombre) {
+    document.querySelectorAll('.metodo-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    metodoSeleccionado = { id, nombre };
+    actualizarResumen();
+  }
+
+  function actualizarResumen() {
+    const val = parseFloat(document.getElementById('valor').value) || 0;
+    document.getElementById('resumenValor').textContent  = '$' + val.toLocaleString('es-CO');
+    document.getElementById('resumenMetodo').textContent = metodoSeleccionado ? metodoSeleccionado.nombre : 'Selecciona método de pago';
+  }
+
+  // ── GUARDAR VENTA ──
+  async function guardarVenta() {
+    const descripcion = document.getElementById('descripcion').value.trim();
+    const valor       = parseFloat(document.getElementById('valor').value);
+    const notas       = document.getElementById('notas').value.trim();
+    const btn         = document.getElementById('btnGuardar');
+
+    if (!descripcion) { toast('Escribe la descripción del producto', 'error'); return; }
+    if (!valor || valor <= 0) { toast('Ingresa un valor válido', 'error'); return; }
+    if (!metodoSeleccionado) { toast('Selecciona el método de pago', 'error'); return; }
+
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    const hoy  = new Date();
+    const fecha = hoy.toISOString().split('T')[0];
+    const hora  = hoy.toTimeString().split(' ')[0];
+
+    const { error } = await sb.from('ventas').insert({
+      descripcion,
+      valor,
+      metodo_pago_id: metodoSeleccionado.id,
+      usuario:        session.usuario,
+      notas:          notas || null,
+      fecha,
+      hora
+    });
+
+    btn.classList.remove('loading');
+    btn.disabled = false;
+
+    if (error) {
+      toast('Error al guardar. Intenta de nuevo.', 'error');
+      return;
+    }
+
+    toast('Venta registrada correctamente', 'success');
+    limpiarFormulario();
+    await cargarHistorial();
+  }
+
+  function limpiarFormulario() {
+    document.getElementById('descripcion').value = '';
+    document.getElementById('valor').value       = '';
+    document.getElementById('notas').value       = '';
+    document.querySelectorAll('.metodo-btn').forEach(b => b.classList.remove('selected'));
+    metodoSeleccionado = null;
+    actualizarResumen();
+  }
+
+  // ── HISTORIAL DE HOY ──
+  async function cargarHistorial() {
+    const hoy   = new Date().toISOString().split('T')[0];
+    const { data } = await sb
+      .from('ventas')
+      .select('*, metodos_pago(nombre)')
+      .eq('fecha', hoy)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    const lista = document.getElementById('historialLista');
+    const total = (data || []).reduce((s, v) => s + parseFloat(v.valor), 0);
+    document.getElementById('totalHoy').textContent = '$' + total.toLocaleString('es-CO');
+
+    if (!data || data.length === 0) {
+      lista.innerHTML = '<div class="empty-state">Aún no hay ventas hoy</div>';
+      return;
+    }
+
+    lista.innerHTML = data.map(v => `
+      <div class="historial-item">
+        <div class="h-left">
+          <div class="h-dot"></div>
+          <div>
+            <div class="h-desc">${v.descripcion}</div>
+            <div class="h-meta">${v.hora ? v.hora.slice(0,5) : ''} · ${v.metodos_pago?.nombre || ''}</div>
+          </div>
+        </div>
+        <div class="h-val">+$${parseFloat(v.valor).toLocaleString('es-CO')}</div>
+      </div>
+    `).join('');
+  }
+
+  // ── TOAST ──
+  function toast(msg, tipo = 'success') {
+    const t    = document.getElementById('toast');
+    const icon = document.getElementById('toastIcon');
+    document.getElementById('toastMsg').textContent = msg;
+    t.className = `toast ${tipo}`;
+    icon.textContent = tipo === 'success' ? '✓' : '✕';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>
