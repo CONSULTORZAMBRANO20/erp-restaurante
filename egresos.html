@@ -37,8 +37,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cat-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .cat-nombre{font-size:12px;color:#9ca3af;font-weight:500;line-height:1.3}
 .cat-btn.selected .cat-nombre{color:#fca5a5}
+.metodos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.metodo-btn{background:#0f1117;border:1px solid rgba(255,255,255,0.08);border-radius:9px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s;user-select:none}
+.metodo-btn:hover{border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.05)}
+.metodo-btn.selected{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.45)}
+.metodo-btn .icono{font-size:18px;margin-bottom:4px}
+.metodo-btn .nombre{font-size:11px;color:#9ca3af;font-weight:500}
+.metodo-btn.selected .nombre{color:#fca5a5}
 .resumen{background:#0f1117;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
 .resumen-label{font-size:12px;color:#6b7280}
+.resumen-sub{font-size:12px;color:#4b5563;margin-top:2px}
 .resumen-valor{font-size:22px;font-weight:600;color:#f87171}
 .btn-guardar{width:100%;background:#ef4444;border:none;border-radius:10px;padding:15px;font-size:15px;font-weight:600;color:#fff;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:8px}
 .btn-guardar:hover{background:#dc2626}
@@ -47,10 +55,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-guardar.loading .spinner{display:block}
 .btn-guardar.loading .btn-text{display:none}
 @keyframes spin{to{transform:rotate(360deg)}}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1d27;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:10px;font-size:14px;color:#f1f0ec;transition:transform .3s ease;z-index:999;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1d27;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:10px;font-size:14px;color:#f1f0ec;transition:transform .3s ease;z-index:999;white-space:nowrap}
 .toast.show{transform:translateX(-50%) translateY(0)}
-.toast.success .toast-icon{color:#4ade80;font-size:18px}
-.toast.error .toast-icon{color:#f87171;font-size:18px}
+.toast.success .ti{color:#4ade80;font-size:16px}
+.toast.error .ti{color:#f87171;font-size:16px}
 .historial-item{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
 .historial-item:last-child{border-bottom:none}
 .h-left{display:flex;align-items:center;gap:10px}
@@ -65,7 +73,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <div class="topbar">
   <div class="topbar-left">
-    <a href="ventas.html" class="back-btn">← Volver</a>
+    <a href="dashboard.html" class="back-btn">← Volver</a>
     <span class="page-title">Registrar egreso</span>
   </div>
   <div class="user-pill">
@@ -75,7 +83,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <div class="container">
-
   <div class="card">
     <div class="card-title">Nuevo egreso</div>
 
@@ -98,6 +105,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
 
     <div class="field">
+      <label>Cuenta desde donde se paga</label>
+      <div class="metodos-grid" id="metodosGrid"></div>
+    </div>
+
+    <div class="field">
       <label>Proveedor o beneficiario <span style="color:#4b5563;font-weight:400">(opcional)</span></label>
       <input type="text" id="proveedor" placeholder="Ej: Distribuidora El Maizal" autocomplete="off"/>
     </div>
@@ -111,7 +123,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="resumen">
     <div>
       <div class="resumen-label">Total a registrar</div>
-      <div style="font-size:12px;color:#4b5563;margin-top:2px" id="resumenCat">Selecciona una categoría</div>
+      <div class="resumen-sub" id="resumenMeta">Selecciona categoría y cuenta</div>
     </div>
     <div class="resumen-valor" id="resumenValor">$0</div>
   </div>
@@ -130,11 +142,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="empty-state">Aún no hay egresos hoy</div>
     </div>
   </div>
-
 </div>
 
 <div class="toast" id="toast">
-  <span class="toast-icon" id="toastIcon"></span>
+  <span class="ti" id="toastIcon"></span>
   <span id="toastMsg"></span>
 </div>
 
@@ -146,7 +157,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let categoriaSeleccionada = null;
+  let metodoSeleccionado    = null;
   let session = null;
+
+  const ICONOS = {
+    'Efectivo':'💵','Nequi':'📱','Daviplata':'📲',
+    'Transferencia':'🏦','Tarjeta débito':'💳','Tarjeta crédito':'💳'
+  };
 
   window.addEventListener('load', async () => {
     const raw = sessionStorage.getItem('erp_user');
@@ -154,8 +171,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     session = JSON.parse(raw);
     document.getElementById('userName').textContent    = session.nombre;
     document.getElementById('userInitial').textContent = session.nombre.charAt(0).toUpperCase();
-    await cargarCategorias();
-    await cargarHistorial();
+    await Promise.all([cargarCategorias(), cargarMetodos(), cargarHistorial()]);
     document.getElementById('valor').addEventListener('input', actualizarResumen);
   });
 
@@ -166,25 +182,41 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     (data || []).forEach(c => {
       const div = document.createElement('div');
       div.className = 'cat-btn';
-      div.dataset.id = c.id;
-      div.dataset.nombre = c.nombre;
       div.innerHTML = `<div class="cat-dot" style="background:${c.color}"></div><div class="cat-nombre">${c.nombre}</div>`;
-      div.onclick = () => seleccionarCategoria(div, c.id, c.nombre);
+      div.onclick = () => {
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+        div.classList.add('selected');
+        categoriaSeleccionada = { id: c.id, nombre: c.nombre };
+        actualizarResumen();
+      };
       grid.appendChild(div);
     });
   }
 
-  function seleccionarCategoria(el, id, nombre) {
-    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
-    el.classList.add('selected');
-    categoriaSeleccionada = { id, nombre };
-    actualizarResumen();
+  async function cargarMetodos() {
+    const { data } = await sb.from('metodos_pago').select('*').eq('activo', true).order('id');
+    const grid = document.getElementById('metodosGrid');
+    grid.innerHTML = '';
+    (data || []).forEach(m => {
+      const div = document.createElement('div');
+      div.className = 'metodo-btn';
+      div.innerHTML = `<div class="icono">${ICONOS[m.nombre]||'💰'}</div><div class="nombre">${m.nombre}</div>`;
+      div.onclick = () => {
+        document.querySelectorAll('.metodo-btn').forEach(b => b.classList.remove('selected'));
+        div.classList.add('selected');
+        metodoSeleccionado = { id: m.id, nombre: m.nombre };
+        actualizarResumen();
+      };
+      grid.appendChild(div);
+    });
   }
 
   function actualizarResumen() {
     const val = parseFloat(document.getElementById('valor').value) || 0;
     document.getElementById('resumenValor').textContent = '$' + val.toLocaleString('es-CO');
-    document.getElementById('resumenCat').textContent   = categoriaSeleccionada ? categoriaSeleccionada.nombre : 'Selecciona una categoría';
+    const cat = categoriaSeleccionada?.nombre || '—';
+    const met = metodoSeleccionado?.nombre    || '—';
+    document.getElementById('resumenMeta').textContent = cat + ' · ' + met;
   }
 
   async function guardarEgreso() {
@@ -194,9 +226,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     const notas       = document.getElementById('notas').value.trim();
     const btn         = document.getElementById('btnGuardar');
 
-    if (!descripcion)          { toast('Escribe la descripción del egreso', 'error'); return; }
-    if (!valor || valor <= 0)  { toast('Ingresa un valor válido', 'error'); return; }
-    if (!categoriaSeleccionada){ toast('Selecciona una categoría', 'error'); return; }
+    if (!descripcion)           { toast('Escribe la descripción del egreso', 'error'); return; }
+    if (!valor || valor <= 0)   { toast('Ingresa un valor válido', 'error'); return; }
+    if (!categoriaSeleccionada) { toast('Selecciona una categoría', 'error'); return; }
+    if (!metodoSeleccionado)    { toast('Selecciona la cuenta desde donde se paga', 'error'); return; }
 
     btn.classList.add('loading');
     btn.disabled = true;
@@ -208,10 +241,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     const { error } = await sb.from('egresos').insert({
       descripcion,
       valor,
-      categoria_id: categoriaSeleccionada.id,
-      proveedor:    proveedor || null,
-      usuario:      session.usuario,
-      notas:        notas || null,
+      categoria_id:   categoriaSeleccionada.id,
+      metodo_pago_id: metodoSeleccionado.id,
+      proveedor:      proveedor || null,
+      usuario:        session.usuario,
+      notas:          notas || null,
       fecha,
       hora
     });
@@ -232,48 +266,44 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     document.getElementById('proveedor').value   = '';
     document.getElementById('notas').value       = '';
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.metodo-btn').forEach(b => b.classList.remove('selected'));
     categoriaSeleccionada = null;
+    metodoSeleccionado    = null;
     actualizarResumen();
   }
 
   async function cargarHistorial() {
     const hoy = new Date().toISOString().split('T')[0];
-    const { data } = await sb
-      .from('egresos')
-      .select('*, categorias_egreso(nombre, color)')
-      .eq('fecha', hoy)
-      .order('created_at', { ascending: false })
-      .limit(20);
+    const { data } = await sb.from('egresos')
+      .select('*, categorias_egreso(nombre,color), metodos_pago(nombre)')
+      .eq('fecha', hoy).order('created_at', { ascending: false }).limit(20);
 
     const lista = document.getElementById('historialLista');
-    const total = (data || []).reduce((s, e) => s + parseFloat(e.valor), 0);
+    const total = (data||[]).reduce((s,e) => s + parseFloat(e.valor), 0);
     document.getElementById('totalHoy').textContent = '$' + total.toLocaleString('es-CO');
 
     if (!data || data.length === 0) {
       lista.innerHTML = '<div class="empty-state">Aún no hay egresos hoy</div>';
       return;
     }
-
     lista.innerHTML = data.map(e => `
       <div class="historial-item">
         <div class="h-left">
-          <div class="h-dot" style="background:${e.categorias_egreso?.color || '#6b7280'}"></div>
+          <div class="h-dot" style="background:${e.categorias_egreso?.color||'#6b7280'}"></div>
           <div>
             <div class="h-desc">${e.descripcion}</div>
-            <div class="h-meta">${e.hora ? e.hora.slice(0,5) : ''} · ${e.categorias_egreso?.nombre || ''} ${e.proveedor ? '· ' + e.proveedor : ''}</div>
+            <div class="h-meta">${e.hora?.slice(0,5)||''} · ${e.categorias_egreso?.nombre||''} · ${e.metodos_pago?.nombre||'Sin cuenta'}</div>
           </div>
         </div>
         <div class="h-val">-$${parseFloat(e.valor).toLocaleString('es-CO')}</div>
-      </div>
-    `).join('');
+      </div>`).join('');
   }
 
   function toast(msg, tipo = 'success') {
-    const t  = document.getElementById('toast');
-    const ic = document.getElementById('toastIcon');
-    document.getElementById('toastMsg').textContent = msg;
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent  = msg;
+    document.getElementById('toastIcon').textContent = tipo === 'success' ? '✓' : '✕';
     t.className = `toast ${tipo}`;
-    ic.textContent = tipo === 'success' ? '✓' : '✕';
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
   }
