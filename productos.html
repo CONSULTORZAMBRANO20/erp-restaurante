@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Arepas Yennitas · Productos</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1117;color:#f1f0ec;min-height:100vh}
+.topbar{background:#1a1d27;border-bottom:1px solid rgba(255,255,255,0.06);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.back-btn{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:6px 12px;font-size:13px;color:#9ca3af;cursor:pointer;text-decoration:none}
+.page-title{font-size:15px;font-weight:500;color:#f1f0ec}
+.container{max-width:700px;margin:0 auto;padding:20px 16px}
+.card{background:#1a1d27;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:500;color:#9ca3af;margin-bottom:16px;text-transform:uppercase;letter-spacing:.05em;display:flex;justify-content:space-between;align-items:center}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;color:#9ca3af;margin-bottom:6px;font-weight:500}
+.field input,.field select{width:100%;background:#0f1117;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:11px 14px;font-size:14px;color:#f1f0ec;outline:none;font-family:inherit;transition:border .2s}
+.field input:focus,.field select:focus{border-color:rgba(249,115,22,0.4)}
+.field input::placeholder{color:#374151}
+.field select{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.input-prefix{position:relative}
+.input-prefix span{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#6b7280;font-size:14px;pointer-events:none}
+.input-prefix input{padding-left:26px}
+.btn{border:none;border-radius:8px;padding:11px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;width:100%;margin-top:4px}
+.btn-orange{background:#f97316;color:#fff}
+.btn-orange:hover{background:#ea6c0a}
+.btn-orange:disabled{background:#1f2937;color:#4b5563;cursor:not-allowed}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;display:none}
+.btn-orange.loading .spinner{display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.cat-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.cat-tab{background:#0f1117;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:6px 14px;font-size:12px;color:#6b7280;cursor:pointer;transition:all .15s}
+.cat-tab.active{background:rgba(249,115,22,0.12);border-color:rgba(249,115,22,0.3);color:#fb923c;font-weight:500}
+.prod-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.prod-item:last-child{border-bottom:none}
+.prod-info{flex:1;min-width:0}
+.prod-nombre{font-size:13px;font-weight:500;color:#f1f0ec;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prod-cat{font-size:11px;color:#6b7280;margin-top:2px}
+.prod-precio{font-size:14px;font-weight:600;color:#fb923c;flex-shrink:0;margin-right:8px}
+.prod-actions{display:flex;gap:6px;flex-shrink:0}
+.btn-edit{background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2);border-radius:6px;padding:5px 10px;font-size:11px;color:#fb923c;cursor:pointer;transition:all .15s}
+.btn-edit:hover{background:rgba(249,115,22,0.2)}
+.btn-toggle{border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;transition:all .15s;border:none}
+.btn-activo{background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.2)}
+.btn-activo:hover{background:rgba(74,222,128,0.2)}
+.btn-inactivo{background:rgba(107,114,128,0.1);color:#6b7280;border:1px solid rgba(107,114,128,0.2)}
+.btn-inactivo:hover{background:rgba(107,114,128,0.2)}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:#1a1d27;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:24px;width:100%;max-width:420px}
+.modal-title{font-size:15px;font-weight:500;color:#f1f0ec;margin-bottom:20px}
+.modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.btn-cancel{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:11px;font-size:13px;color:#9ca3af;cursor:pointer}
+.btn-cancel:hover{background:rgba(255,255,255,0.08)}
+.empty{text-align:center;padding:32px;color:#4b5563;font-size:13px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1d27;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:10px;font-size:14px;color:#f1f0ec;transition:transform .3s ease;z-index:999;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success .ti{color:#4ade80}
+.toast.error .ti{color:#f87171}
+.count-badge{background:rgba(249,115,22,0.15);color:#fb923c;font-size:11px;padding:2px 8px;border-radius:99px;font-weight:500}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="admin.html" class="back-btn">← Admin</a>
+    <span class="page-title">Gestión de productos</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Nuevo producto -->
+  <div class="card">
+    <div class="card-title">Agregar producto</div>
+    <div class="field">
+      <label>Nombre del producto</label>
+      <input type="text" id="nNombre" placeholder="Ej: Arepa rellena champiñón"/>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Precio</label>
+        <div class="input-prefix">
+          <span>$</span>
+          <input type="number" id="nPrecio" placeholder="12000" min="1" inputmode="numeric"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Categoría</label>
+        <select id="nCategoria">
+          <option value="Clásicas">Clásicas</option>
+          <option value="Mixtas">Mixtas</option>
+          <option value="Especiales">Especiales</option>
+          <option value="Super">Super</option>
+          <option value="Bebidas">Bebidas</option>
+          <option value="Otros">Otros</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-orange" id="btnAgregar" onclick="agregarProducto()">
+      <span class="spinner"></span>
+      Agregar producto
+    </button>
+  </div>
+
+  <!-- Lista de productos -->
+  <div class="card">
+    <div class="card-title">
+      <span>Catálogo actual</span>
+      <span class="count-badge" id="countBadge">0 productos</span>
+    </div>
+    <div class="cat-tabs" id="catTabs"></div>
+    <div id="listaProductos"><div class="empty">Cargando...</div></div>
+  </div>
+
+</div>
+
+<!-- Modal editar -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-title">Editar producto</div>
+    <input type="hidden" id="editId"/>
+    <div class="field">
+      <label>Nombre</label>
+      <input type="text" id="editNombre"/>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Precio</label>
+        <div class="input-prefix">
+          <span>$</span>
+          <input type="number" id="editPrecio" min="1" inputmode="numeric"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Categoría</label>
+        <select id="editCategoria">
+          <option value="Clásicas">Clásicas</option>
+          <option value="Mixtas">Mixtas</option>
+          <option value="Especiales">Especiales</option>
+          <option value="Super">Super</option>
+          <option value="Bebidas">Bebidas</option>
+          <option value="Otros">Otros</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-orange" id="btnGuardarEdit" onclick="guardarEdicion()">
+        <span class="spinner"></span>
+        Guardar cambios
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <span class="ti" id="toastIcon"></span>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+  // ⚠️ REEMPLAZA CON TUS DATOS DE SUPABASE
+  const SUPABASE_URL = 'https://snjrcqppawyhzjgqlpkf.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNuanJjcXBwYXd5aHpqZ3FscGtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMzYxNzcsImV4cCI6MjA4OTgxMjE3N30.eoPPwtX_bm00_y5BHyo60oloOXE25RTL_D6RUS3E6-M';
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let todos = [];
+  let catActiva = 'Todas';
+
+  window.addEventListener('load', async () => {
+    const raw = sessionStorage.getItem('erp_user');
+    if (!raw) { window.location.href = 'index.html'; return; }
+    const s = JSON.parse(raw);
+    if (s.rol !== 'admin') { window.location.href = 'dashboard.html'; return; }
+    await cargarProductos();
+  });
+
+  async function cargarProductos() {
+    const { data } = await sb.from('productos').select('*').order('categoria').order('orden');
+    todos = data || [];
+    const cats = ['Todas', ...new Set(todos.map(p => p.categoria))];
+
+    const tabs = document.getElementById('catTabs');
+    tabs.innerHTML = cats.map(c => `
+      <div class="cat-tab ${c === catActiva ? 'active' : ''}"
+           onclick="filtrarCat('${c}',this)">${c}
+      </div>`).join('');
+
+    document.getElementById('countBadge').textContent = todos.length + ' productos';
+    renderLista();
+  }
+
+  function filtrarCat(cat, el) {
+    catActiva = cat;
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderLista();
+  }
+
+  function renderLista() {
+    const filtrados = catActiva === 'Todas' ? todos : todos.filter(p => p.categoria === catActiva);
+    const lista = document.getElementById('listaProductos');
+    if (filtrados.length === 0) { lista.innerHTML = '<div class="empty">Sin productos en esta categoría</div>'; return; }
+    lista.innerHTML = filtrados.map(p => `
+      <div class="prod-item">
+        <div class="prod-info">
+          <div class="prod-nombre">${p.nombre}</div>
+          <div class="prod-cat">${p.categoria}</div>
+        </div>
+        <div class="prod-precio">$${parseInt(p.precio).toLocaleString('es-CO')}</div>
+        <div class="prod-actions">
+          <button class="btn-edit" onclick="abrirEditar(${p.id})">Editar</button>
+          <button class="btn-toggle ${p.disponible ? 'btn-activo' : 'btn-inactivo'}"
+                  onclick="toggleDisponible(${p.id}, ${p.disponible})">
+            ${p.disponible ? 'Activo' : 'Inactivo'}
+          </button>
+        </div>
+      </div>`).join('');
+  }
+
+  async function agregarProducto() {
+    const nombre    = document.getElementById('nNombre').value.trim();
+    const precio    = parseFloat(document.getElementById('nPrecio').value);
+    const categoria = document.getElementById('nCategoria').value;
+    const btn       = document.getElementById('btnAgregar');
+
+    if (!nombre)              { toast('Escribe el nombre del producto', 'error'); return; }
+    if (!precio || precio <= 0) { toast('Ingresa un precio válido', 'error'); return; }
+
+    btn.classList.add('loading'); btn.disabled = true;
+
+    const maxOrden = todos.length > 0 ? Math.max(...todos.map(p => p.orden || 0)) + 1 : 1;
+    const { error } = await sb.from('productos').insert({ nombre, precio, categoria, orden: maxOrden, disponible: true });
+
+    btn.classList.remove('loading'); btn.disabled = false;
+
+    if (error) { toast('Error al agregar producto', 'error'); return; }
+
+    document.getElementById('nNombre').value = '';
+    document.getElementById('nPrecio').value = '';
+    toast('Producto agregado correctamente', 'success');
+    await cargarProductos();
+  }
+
+  function abrirEditar(id) {
+    const p = todos.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('editId').value        = p.id;
+    document.getElementById('editNombre').value    = p.nombre;
+    document.getElementById('editPrecio').value    = parseInt(p.precio);
+    document.getElementById('editCategoria').value = p.categoria;
+    document.getElementById('modalBg').classList.add('open');
+  }
+
+  function cerrarModal() {
+    document.getElementById('modalBg').classList.remove('open');
+  }
+
+  async function guardarEdicion() {
+    const id        = parseInt(document.getElementById('editId').value);
+    const nombre    = document.getElementById('editNombre').value.trim();
+    const precio    = parseFloat(document.getElementById('editPrecio').value);
+    const categoria = document.getElementById('editCategoria').value;
+    const btn       = document.getElementById('btnGuardarEdit');
+
+    if (!nombre)               { toast('El nombre no puede estar vacío', 'error'); return; }
+    if (!precio || precio <= 0){ toast('Ingresa un precio válido', 'error'); return; }
+
+    btn.classList.add('loading'); btn.disabled = true;
+
+    const { error } = await sb.from('productos').update({ nombre, precio, categoria }).eq('id', id);
+
+    btn.classList.remove('loading'); btn.disabled = false;
+
+    if (error) { toast('Error al guardar cambios', 'error'); return; }
+
+    cerrarModal();
+    toast('Producto actualizado correctamente', 'success');
+    await cargarProductos();
+  }
+
+  async function toggleDisponible(id, actual) {
+    const { error } = await sb.from('productos').update({ disponible: !actual }).eq('id', id);
+    if (error) { toast('Error al actualizar', 'error'); return; }
+    toast(actual ? 'Producto desactivado' : 'Producto activado', 'success');
+    await cargarProductos();
+  }
+
+  function toast(msg, tipo = 'success') {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent  = msg;
+    document.getElementById('toastIcon').textContent = tipo === 'success' ? '✓' : '✕';
+    t.className = `toast ${tipo}`;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  document.getElementById('modalBg').addEventListener('click', e => {
+    if (e.target === document.getElementById('modalBg')) cerrarModal();
+  });
+</script>
+</body>
+</html>
