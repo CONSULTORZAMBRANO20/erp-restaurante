@@ -311,14 +311,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       return `${qty}x ${p.nombre}`;
     }).join(', ');
 
-    const ahora = new Date();
-    const col   = new Date(ahora.toLocaleString('en-US', { timeZone: 'America/Bogota' }));
-    const fecha = col.getFullYear() + '-' +
-                  String(col.getMonth() + 1).padStart(2, '0') + '-' +
-                  String(col.getDate()).padStart(2, '0');
-    const hora  = String(col.getHours()).padStart(2, '0') + ':' +
-                  String(col.getMinutes()).padStart(2, '0') + ':' +
-                  String(col.getSeconds()).padStart(2, '0');
+    const hoy   = ahoraColombia();
+    const fecha = hoy.fecha;
+    const hora  = hoy.hora;
     const mesa  = document.getElementById('mesa').value.trim();
     const notas = document.getElementById('notas').value.trim();
 
@@ -377,8 +372,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   }
 
   async function cargarHistorial() {
-    const hoy = new Date().toISOString().split('T')[0];
-    if (esAdmin) await cargarHoy();
+    const hoy = ahoraColombia().fecha;
     const { data } = await sb.from('ventas')
       .select('descripcion, valor, hora, mesa, metodos_pago(nombre)')
       .eq('fecha', hoy).order('created_at', { ascending: false }).limit(15);
@@ -406,6 +400,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     t.className = `toast ${tipo}`;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3500);
+  }
+  function ahoraColombia() {
+  const ahora  = new Date();
+  const col    = new Date(ahora.toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+  const fecha  = col.getFullYear() + '-' +
+    String(col.getMonth() + 1).padStart(2, '0') + '-' +
+    String(col.getDate()).padStart(2, '0');
+  const hora   = String(col.getHours()).padStart(2, '0') + ':' +
+    String(col.getMinutes()).padStart(2, '0') + ':' +
+    String(col.getSeconds()).padStart(2, '0');
+  return { fecha, hora };
   }
 </script>
 </body>
