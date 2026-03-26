@@ -378,6 +378,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
   async function cargarHistorial() {
     const hoy = new Date().toISOString().split('T')[0];
+    if (esAdmin) await cargarHoy();
     const { data } = await sb.from('ventas')
       .select('descripcion, valor, hora, mesa, metodos_pago(nombre)')
       .eq('fecha', hoy).order('created_at', { ascending: false }).limit(15);
