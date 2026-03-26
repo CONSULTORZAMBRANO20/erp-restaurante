@@ -324,7 +324,7 @@ canvas{max-height:220px}
 
   // ── HOY ──
   async function cargarHoy() {
-    const hoy = new Date().toISOString().split('T')[0];
+    const hoy = ahoraColombia().fecha;
     const [{ data: ventas },{ data: egresos }] = await Promise.all([
       sb.from('ventas').select('valor,metodo_pago_id,descripcion,hora,mesa,metodos_pago(nombre)').eq('fecha',hoy).order('created_at',{ascending:false}),
       sb.from('egresos').select('valor,descripcion,hora,categorias_egreso(nombre,color)').eq('fecha',hoy).order('created_at',{ascending:false})
@@ -384,7 +384,7 @@ canvas{max-height:220px}
     const anio = hoy.getFullYear();
     const mes  = String(hoy.getMonth()+1).padStart(2,'0');
     const desde = `${anio}-${mes}-01`;
-    const hasta = hoy.toISOString().split('T')[0];
+    const hasta = ahoraColombia().fecha;
     const [{ data: ventas },{ data: egresos }] = await Promise.all([
       sb.from('ventas').select('valor,fecha').gte('fecha',desde).lte('fecha',hasta),
       sb.from('egresos').select('valor,fecha,categorias_egreso(nombre,color)').gte('fecha',desde).lte('fecha',hasta)
@@ -442,7 +442,7 @@ canvas{max-height:220px}
   // ── SALDOS ──
   async function cargarSaldos(periodo) {
     const hoy    = new Date();
-    const hoyStr = hoy.toISOString().split('T')[0];
+    const hoyStr = ahoraColombia().fecha;
     let desde, hasta;
     if (periodo==='hoy') { desde=hoyStr; hasta=hoyStr; }
     else if (periodo==='mes') { const m=String(hoy.getMonth()+1).padStart(2,'0'); desde=`${hoy.getFullYear()}-${m}-01`; hasta=hoyStr; }
@@ -531,7 +531,8 @@ canvas{max-height:220px}
         </div>
         <div style="display:flex;align-items:center">
           ${esAdmin?`<div class="tx-val" style="color:${valColor}">${esVenta?'+':'-'}$${parseFloat(r.valor).toLocaleString('es-CO')}</div>`:'<div class="tx-val" style="color:'+valColor+'">•••</div>'}
-          ${esVenta && esAdmin?`<span class="tx-edit" onclick="abrirEditar('${r.id}')">Editar</span>`:''}
+          ${esAdmin && esVenta?`<span class="tx-edit" onclick="abrirEditar('${r.id}')">Editar</span>`:''}
+          ${esAdmin?`<span class="tx-edit" style="background:rgba(239,68,68,0.1);color:#f87171;border-color:rgba(239,68,68,0.2)" onclick="eliminarRegistro('${r.id}','${historialTipo}')">Eliminar</span>`:''}
         </div>
       </div>`;
     }).join('');
@@ -574,7 +575,7 @@ canvas{max-height:220px}
       metodo_pago_id: metodoId,
       mesa:           mesa || null,
       notas:          notas || null,
-      editado_en:     new Date().toISOString(),
+      editado_en: new Date(new Date().toLocaleString('en-US',{timeZone:'America/Bogota'})).toISOString(),
       editado_por:    session.usuario
     }).eq('id', id);
 
@@ -599,6 +600,41 @@ canvas{max-height:220px}
   function logout() {
     sessionStorage.removeItem('erp_user');
     window.location.href='index.html';
+  }
+
+  function ahoraColombia() {
+  const ahora = new Date();
+  const col   = new Date(ahora.toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+  const fecha = col.getFullYear() + '-' +
+    String(col.getMonth() + 1).padStart(2, '0') + '-' +
+    String(col.getDate()).padStart(2, '0');
+  const hora  = String(col.getHours()).padStart(2, '0') + ':' +
+    String(col.getMinutes()).padStart(2, '0') + ':' +
+    String(col.getSeconds()).padStart(2, '0');
+  return { fecha, hora };
+  }
+
+  async function eliminarRegistro(id, tipo) {
+    const confirmMsg = tipo === 'ventas'
+      ? '¿Eliminar esta venta? Esta acción no se puede deshacer.'
+      : '¿Eliminar este egreso? Esta acción no se puede deshacer.';
+    if (!confirm(confirmMsg)) return;
+  
+    const tabla = tipo === 'ventas' ? 'ventas' : 'egresos';
+  
+    if (tipo === 'ventas') {
+      await sb.from('venta_items').delete().eq('venta_id', id);
+    }
+  
+    const { error } = await sb.from(tabla).delete().eq('id', id);
+  
+    if (error) {
+      alert('Error al eliminar. Intenta de nuevo.');
+      return;
+    }
+  
+    await cargarHistorial();
+    if (document.getElementById('tab-hoy').classList.contains('active')) cargarHoy();
   }
 </script>
 </body>
