@@ -128,6 +128,7 @@ canvas{max-height:220px}
   <a class="nav-tab admin-only" onclick="showTab('mes',this)">Este mes</a>
   <a class="nav-tab admin-only" onclick="showTab('anio',this)">Este año</a>
   <a class="nav-tab admin-only" onclick="showTab('saldos',this)">Saldos</a>
+  <a class="nav-tab admin-only" onclick="showTab('diario',this)">Reporte día</a>
   <a class="nav-tab" id="tabHistorial" onclick="showTab('historial',this)">Historial</a>
 </div>
 
@@ -182,6 +183,15 @@ canvas{max-height:220px}
     </div>
     <div class="saldo-total" id="saldoTotales"></div>
     <div id="saldosCuentas"></div>
+  </div>
+
+  <!-- REPORTE POR DÍA -->
+  <div class="section" id="tab-diario">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+      <input type="date" class="filtro-input" id="reporteFecha" onchange="cargarReporteDia()"/>
+      <span style="font-size:12px;color:#6b7280">Selecciona cualquier fecha para ver el resumen completo</span>
+    </div>
+    <div id="reporteDiaContenido"></div>
   </div>
 
   <!-- HISTORIAL -->
@@ -318,6 +328,11 @@ canvas{max-height:220px}
     el.classList.add('active');
     if (tab === 'mes')       cargarMes();
     if (tab === 'anio')      cargarAnio();
+    if (tab === 'diario') {
+      const hoy = ahoraColombia().fecha;
+      document.getElementById('reporteFecha').value = hoy;
+      cargarReporteDia();
+    }
     if (tab === 'saldos')    cargarSaldos('hoy');
     if (tab === 'historial') cargarHistorial();
   }
@@ -635,6 +650,167 @@ canvas{max-height:220px}
   
     await cargarHistorial();
     if (document.getElementById('tab-hoy').classList.contains('active')) cargarHoy();
+  }
+
+  //---------------------------------------------------- FUNCION DE SALDOS POR CUENTAS PARA CADA DIA
+  // ── REPORTE POR DÍA ──
+  async function cargarReporteDia() {
+    const fecha = document.getElementById('reporteFecha').value;
+    if (!fecha) return;
+  
+    const contenido = document.getElementById('reporteDiaContenido');
+    contenido.innerHTML = '<div class="empty">Cargando...</div>';
+  
+    const [{ data: ventas }, { data: egresos }] = await Promise.all([
+      sb.from('ventas').select('*, metodos_pago(nombre)').eq('fecha', fecha).order('hora', { ascending: true }),
+      sb.from('egresos').select('*, categorias_egreso(nombre,color), metodos_pago(nombre)').eq('fecha', fecha).order('hora', { ascending: true })
+    ]);
+  
+    const totalV   = (ventas  || []).reduce((s, v) => s + parseFloat(v.valor), 0);
+    const totalE   = (egresos || []).reduce((s, e) => s + parseFloat(e.valor), 0);
+    const utilidad = totalV - totalE;
+    const margen   = totalV > 0 ? ((utilidad / totalV) * 100).toFixed(1) : 0;
+  
+    // Ventas por método de pago
+    const porMetodo = {};
+    (ventas || []).forEach(v => {
+      const n = v.metodos_pago?.nombre || 'Otro';
+      porMetodo[n] = (porMetodo[n] || 0) + parseFloat(v.valor);
+    });
+  
+    // Egresos por categoría
+    const porCat = {};
+    (egresos || []).forEach(e => {
+      const n = e.categorias_egreso?.nombre || 'Otro';
+      const c = e.categorias_egreso?.color  || '#6b7280';
+      if (!porCat[n]) porCat[n] = { val: 0, color: c };
+      porCat[n].val += parseFloat(e.valor);
+    });
+  
+    // Saldos por cuenta (entradas - salidas)
+    const entradas = {}, salidas = {};
+    (ventas  || []).forEach(v => { const n = v.metodos_pago?.nombre || 'Otro'; entradas[n] = (entradas[n] || 0) + parseFloat(v.valor); });
+    (egresos || []).filter(e => e.metodo_pago_id).forEach(e => { const n = e.metodos_pago?.nombre || 'Otro'; salidas[n] = (salidas[n] || 0) + parseFloat(e.valor); });
+  
+    const maxM = Math.max(...Object.values(porMetodo), 1);
+    const maxC = Math.max(...Object.values(porCat).map(c => c.val), 1);
+  
+    const fechaFormateada = new Date(fecha + 'T12:00:00').toLocaleDateString('es-CO', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+  
+    contenido.innerHTML = `
+  
+      <div style="font-size:13px;color:#9ca3af;margin-bottom:16px;text-transform:capitalize">${fechaFormateada}</div>
+  
+      <div class="metrics" style="margin-bottom:20px">
+        ${metricCard('Ventas del día', '$' + totalV.toLocaleString('es-CO'), (ventas?.length || 0) + ' transacciones', 'gray')}
+        ${metricCard('Egresos del día', '$' + totalE.toLocaleString('es-CO'), '', 'red')}
+        ${metricCard('Utilidad neta', '$' + utilidad.toLocaleString('es-CO'), 'Margen ' + margen + '%', utilidad >= 0 ? 'green' : 'red')}
+        ${metricCard('Transacciones', ventas?.length || 0, 'ventas', 'gray')}
+      </div>
+  
+      <div class="card">
+        <div class="card-title">Ventas por método de pago</div>
+        ${Object.keys(porMetodo).length === 0
+          ? '<div class="empty">Sin ventas este día</div>'
+          : Object.entries(porMetodo).sort((a, b) => b[1] - a[1]).map(([n, v]) => `
+            <div class="bar-row">
+              <div class="bar-label">${n}</div>
+              <div class="bar-track"><div class="bar-fill" style="width:${(v / maxM * 100).toFixed(1)}%;background:${COLORES_METODO[n] || '#f97316'}"></div></div>
+              <div class="bar-val">$${v.toLocaleString('es-CO')}</div>
+            </div>`).join('')
+        }
+      </div>
+  
+      <div class="card">
+        <div class="card-title">Egresos por categoría</div>
+        ${Object.keys(porCat).length === 0
+          ? '<div class="empty">Sin egresos este día</div>'
+          : Object.entries(porCat).sort((a, b) => b[1].val - a[1].val).map(([n, c]) => `
+            <div class="bar-row">
+              <div class="bar-label">${n}</div>
+              <div class="bar-track"><div class="bar-fill" style="width:${(c.val / maxC * 100).toFixed(1)}%;background:${c.color}"></div></div>
+              <div class="bar-val">$${c.val.toLocaleString('es-CO')}</div>
+            </div>`).join('')
+        }
+      </div>
+  
+      <div class="card">
+        <div class="card-title">Saldo por cuenta</div>
+        ${Object.keys(entradas).length === 0
+          ? '<div class="empty">Sin movimientos este día</div>'
+          : Object.keys(entradas).map(nombre => {
+              const entrada = entradas[nombre] || 0;
+              const salida  = salidas[nombre]  || 0;
+              const neto    = entrada - salida;
+              const color   = COLORES_METODO[nombre] || '#9ca3af';
+              const clase   = neto > 0 ? 'positivo' : neto < 0 ? 'negativo' : 'neutro';
+              return `
+                <div class="saldo-card">
+                  <div class="saldo-header">
+                    <div class="saldo-cuenta">
+                      <div class="saldo-dot" style="background:${color}"></div>
+                      <div class="saldo-nombre">${nombre}</div>
+                    </div>
+                    <div class="saldo-neto ${clase}">$${neto.toLocaleString('es-CO')}</div>
+                  </div>
+                  <div class="saldo-detalle">
+                    <div class="saldo-det-item">
+                      <div class="saldo-det-label">Entradas (ventas)</div>
+                      <div class="saldo-det-val entrada">+$${entrada.toLocaleString('es-CO')}</div>
+                    </div>
+                    <div class="saldo-det-item">
+                      <div class="saldo-det-label">Salidas (egresos)</div>
+                      <div class="saldo-det-val salida">-$${salida.toLocaleString('es-CO')}</div>
+                    </div>
+                  </div>
+                </div>`;
+            }).join('')
+        }
+      </div>
+  
+      <div class="card">
+        <div class="card-title">
+          Detalle de ventas
+          <span style="color:#4ade80;font-size:13px">$${totalV.toLocaleString('es-CO')}</span>
+        </div>
+        ${(ventas || []).length === 0
+          ? '<div class="empty">Sin ventas este día</div>'
+          : (ventas || []).map(v => `
+            <div class="tx-item">
+              <div class="tx-left">
+                <div class="tx-dot" style="background:#4ade80"></div>
+                <div>
+                  <div class="tx-desc">${v.descripcion}${v.editado_en ? '<span class="edited-badge">editado</span>' : ''}</div>
+                  <div class="tx-meta">${v.hora?.slice(0, 5) || ''} · ${v.metodos_pago?.nombre || ''}${v.mesa ? ' · ' + v.mesa : ''}</div>
+                </div>
+              </div>
+              <div class="tx-val" style="color:#4ade80">+$${parseFloat(v.valor).toLocaleString('es-CO')}</div>
+            </div>`).join('')
+        }
+      </div>
+  
+      <div class="card">
+        <div class="card-title">
+          Detalle de egresos
+          <span style="color:#f87171;font-size:13px">$${totalE.toLocaleString('es-CO')}</span>
+        </div>
+        ${(egresos || []).length === 0
+          ? '<div class="empty">Sin egresos este día</div>'
+          : (egresos || []).map(e => `
+            <div class="tx-item">
+              <div class="tx-left">
+                <div class="tx-dot" style="background:${e.categorias_egreso?.color || '#f87171'}"></div>
+                <div>
+                  <div class="tx-desc">${e.descripcion}</div>
+                  <div class="tx-meta">${e.hora?.slice(0, 5) || ''} · ${e.categorias_egreso?.nombre || ''} · ${e.metodos_pago?.nombre || 'Sin cuenta'}${e.proveedor ? ' · ' + e.proveedor : ''}</div>
+                </div>
+              </div>
+              <div class="tx-val" style="color:#f87171">-$${parseFloat(e.valor).toLocaleString('es-CO')}</div>
+            </div>`).join('')
+        }
+      </div>`;
   }
 </script>
 </body>
